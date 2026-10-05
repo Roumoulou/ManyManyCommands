@@ -169,8 +169,8 @@ build s'en passe : sans lui, Outfitter dégrade les environnements et le dit. Il
 poste, en barres obliques, et le joueur des runs client :
 
 ```properties
-outfitter.profiles_dir=S:/18/00-my-minecraft-favorites-configs
-outfitter.maps_dir=S:/18/05-maps
+outfitter.profiles_dir=C:/MC-Kit/00-favorites
+outfitter.maps_dir=C:/MC-Kit/01-maps
 outfitter.username=<ton pseudo>
 ```
 

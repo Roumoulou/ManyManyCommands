@@ -67,7 +67,7 @@ dependencies {
  *  Même mécanique que mc-26.2 (voir son build), avec ce que 26.1 n'a pas.
  *
  *  ── DEUX ENVIRONNEMENTS, VANILLA PURS ───────────────────────────────────────
- *  `client` et `server`, dans mc-26.1\run\. L'entrepôt S:\18 a les profils 26.1.2,
+ *  `client` et `server`, dans mc-26.1\run\. L'entrepôt C:\MC-Kit a les profils 26.1.2,
  *  `vanilla` et `dev`, pas de maps 26.1.2 : le client démarre sans monde, le
  *  serveur génère le sien, ce qu'Outfitter annonce.
  *

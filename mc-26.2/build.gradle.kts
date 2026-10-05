@@ -63,12 +63,12 @@ dependencies {
  *  Le plugin Outfitter (S:\16\_V\Outfitter, consommé en build composite : voir
  *  settings.gradle.kts) prépare chaque environnement avant son run, serveur
  *  GameTest compris, et déploie le jar. Ce bloc ne déclare que ce qui est propre à
- *  ce module : la version de Minecraft, qui choisit le dossier de l'entrepôt S:\18,
+ *  ce module : la version de Minecraft, qui choisit le dossier de l'entrepôt C:\MC-Kit,
  *  les deux environnements avec leur profil, le serveur GameTest, les deux cibles
  *  de déploiement et le panier du serveur dédié. Tout le reste vient des clés
  *  `outfitter.*` : gradle.properties de la racine pour ce qui est propre au projet
  *  (maps, monde du serveur, logs), machine.properties pour ce qui est propre au
- *  poste ou à la personne (l'entrepôt S:\18, le joueur). Outfitter lit le
+ *  poste ou à la personne (l'entrepôt C:\MC-Kit, le joueur). Outfitter lit le
  *  machine.properties de la racine, puis celui de ce module, qui le surcharge clé
  *  par clé et désigne l'instance Prism de 26.2.
  *
@@ -85,7 +85,7 @@ dependencies {
  *  tourner dans mc-26.2\run\game-test, hors de build\, le remet à neuf avant chaque
  *  run (`freshGameTest` : world\ et config\ retirés) et range le rapport de ses
  *  tests dans build\test-results\gameTest\TEST-gameTest.xml. Il ne reçoit rien de
- *  l'entrepôt ni de l'instance : un clone sans S:\18 le rejoue tel quel. Pour ne
+ *  l'entrepôt ni de l'instance : un clone sans C:\MC-Kit le rejoue tel quel. Pour ne
  *  jouer qu'une partie des tests, un motif à jokers sur leur identifiant,
  *  <mod>:<classe>_<méthode> en snake_case, l'argument entre guillemets : sans eux,
  *  PowerShell le coupe au point.
