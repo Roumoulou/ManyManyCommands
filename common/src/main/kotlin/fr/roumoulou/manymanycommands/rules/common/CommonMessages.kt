@@ -25,6 +25,7 @@ object CommonMessages : MessageFamily("common") {
     val FINDING_NOT_ALLOWED = fragment("finding.not_allowed")
     val FINDING_SCHEMA_TOO_RECENT = fragment("finding.schema_too_recent")
     val FINDING_UNREADABLE = fragment("finding.unreadable")
+    val FINDING_MISSING_KEY = fragment("finding.missing_key")
 
     // La nature attendue d'une valeur, argument de FINDING_WRONG_NATURE.
     val NATURE_TEXT = fragment("nature.text")
@@ -33,4 +34,22 @@ object CommonMessages : MessageFamily("common") {
     val NATURE_BOOLEAN = fragment("nature.boolean")
     val NATURE_OBJECT = fragment("nature.object")
     val NATURE_LIST = fragment("nature.list")
+
+    // Les valeurs admises qui ne s'énumèrent pas, argument de FINDING_NOT_ALLOWED.
+    val ALLOWED_AT_LEAST = fragment("allowed.at_least")
+    val ALLOWED_RANGE = fragment("allowed.range")
+    val ALLOWED_LOWERCASE_NAME = fragment("allowed.lowercase_name")
+    val ALLOWED_DIMENSION = fragment("allowed.dimension")
+
+    // Le déroulé d'une téléportation (chapitre 2.5.8) : ses refus, son compte à rebours, ses annulations.
+    val TELEPORT_PENDING = refusal("teleport.pending")
+    val TELEPORT_COOLDOWN = refusal("teleport.cooldown")
+    val TELEPORT_ARRIVAL_OBSTRUCTED = refusal("teleport.arrival.obstructed")
+    val TELEPORT_ARRIVAL_LAVA_OR_FIRE = refusal("teleport.arrival.lava_or_fire")
+    val TELEPORT_ARRIVAL_VOID = refusal("teleport.arrival.void")
+    val TELEPORT_COUNTDOWN = countdown("teleport.countdown")
+    val TELEPORT_CANCELLED_MOVED = refusal("teleport.cancelled.moved")
+    val TELEPORT_CANCELLED_DAMAGED = refusal("teleport.cancelled.damaged")
+    val TELEPORT_CANCELLED_DIED = refusal("teleport.cancelled.died")
+    val TELEPORT_CANCELLED_CHANGED_DIMENSION = refusal("teleport.cancelled.changed_dimension")
 }

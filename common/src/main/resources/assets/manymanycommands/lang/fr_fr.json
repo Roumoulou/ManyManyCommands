@@ -14,6 +14,7 @@
   "manymanycommands.common.finding.not_allowed": "valeur « %s » non admise, valeurs admises : %s",
   "manymanycommands.common.finding.schema_too_recent": "version de schéma %s plus récente que celle du mod, %s",
   "manymanycommands.common.finding.unreadable": "lecture impossible (%s)",
+  "manymanycommands.common.finding.missing_key": "clé obligatoire « %s » absente",
 
   "manymanycommands.common.nature.text": "un texte entre guillemets",
   "manymanycommands.common.nature.integer": "un nombre entier",
@@ -21,6 +22,22 @@
   "manymanycommands.common.nature.boolean": "true ou false",
   "manymanycommands.common.nature.object": "un objet",
   "manymanycommands.common.nature.list": "une liste",
+
+  "manymanycommands.common.allowed.at_least": "%s ou plus",
+  "manymanycommands.common.allowed.range": "de %s à %s",
+  "manymanycommands.common.allowed.lowercase_name": "1 à 32 caractères, lettres minuscules sans accent, chiffres, _ et -",
+  "manymanycommands.common.allowed.dimension": "l'identifiant d'une dimension, comme minecraft:the_nether",
+
+  "manymanycommands.common.teleport.pending": "Une téléportation est déjà en attente.",
+  "manymanycommands.common.teleport.cooldown": "Encore %s avant de relancer cette commande.",
+  "manymanycommands.common.teleport.arrival.obstructed": "L'arrivée est obstruée.",
+  "manymanycommands.common.teleport.arrival.lava_or_fire": "L'arrivée est dans la lave ou le feu.",
+  "manymanycommands.common.teleport.arrival.void": "L'arrivée est au-dessus du vide.",
+  "manymanycommands.common.teleport.countdown": "Téléportation dans %s.",
+  "manymanycommands.common.teleport.cancelled.moved": "Téléportation annulée : vous avez bougé.",
+  "manymanycommands.common.teleport.cancelled.damaged": "Téléportation annulée : vous avez subi des dégâts.",
+  "manymanycommands.common.teleport.cancelled.died": "Téléportation annulée : vous êtes mort.",
+  "manymanycommands.common.teleport.cancelled.changed_dimension": "Téléportation annulée : vous avez changé de dimension.",
 
   "manymanycommands.mod.status.version": "ManyManyCommands %s",
   "manymanycommands.mod.status.source": "Source des droits : %s",
@@ -34,6 +51,7 @@
   "manymanycommands.mod.reload.finding.without_path": "ligne %s : %s",
   "manymanycommands.mod.reload.finding.alone": "%s",
   "manymanycommands.mod.reload.restart_required": "%s : prendra effet au redémarrage du serveur.",
+  "manymanycommands.mod.reload.restart_required.in_file": "%s, %s : prendra effet au redémarrage du serveur.",
 
   "manymanycommands.mod.startup.invalid_settings": "Réglages invalides : les réglages livrés s'appliquent. /manymanycommands en donne l'état."
 }

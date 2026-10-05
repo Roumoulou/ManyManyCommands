@@ -14,6 +14,7 @@
   "manymanycommands.common.finding.not_allowed": "value \"%s\" not allowed, allowed values: %s",
   "manymanycommands.common.finding.schema_too_recent": "schema version %s newer than the mod's, %s",
   "manymanycommands.common.finding.unreadable": "cannot be read (%s)",
+  "manymanycommands.common.finding.missing_key": "required key \"%s\" missing",
 
   "manymanycommands.common.nature.text": "a quoted text",
   "manymanycommands.common.nature.integer": "a whole number",
@@ -21,6 +22,22 @@
   "manymanycommands.common.nature.boolean": "true or false",
   "manymanycommands.common.nature.object": "an object",
   "manymanycommands.common.nature.list": "a list",
+
+  "manymanycommands.common.allowed.at_least": "%s or more",
+  "manymanycommands.common.allowed.range": "from %s to %s",
+  "manymanycommands.common.allowed.lowercase_name": "1 to 32 characters, lowercase unaccented letters, digits, _ and -",
+  "manymanycommands.common.allowed.dimension": "a dimension identifier, such as minecraft:the_nether",
+
+  "manymanycommands.common.teleport.pending": "A teleport is already pending.",
+  "manymanycommands.common.teleport.cooldown": "%s left before running this command again.",
+  "manymanycommands.common.teleport.arrival.obstructed": "The arrival point is obstructed.",
+  "manymanycommands.common.teleport.arrival.lava_or_fire": "The arrival point is in lava or fire.",
+  "manymanycommands.common.teleport.arrival.void": "The arrival point is above the void.",
+  "manymanycommands.common.teleport.countdown": "Teleporting in %s.",
+  "manymanycommands.common.teleport.cancelled.moved": "Teleport cancelled: you moved.",
+  "manymanycommands.common.teleport.cancelled.damaged": "Teleport cancelled: you took damage.",
+  "manymanycommands.common.teleport.cancelled.died": "Teleport cancelled: you died.",
+  "manymanycommands.common.teleport.cancelled.changed_dimension": "Teleport cancelled: you changed dimension.",
 
   "manymanycommands.mod.status.version": "ManyManyCommands %s",
   "manymanycommands.mod.status.source": "Permission source: %s",
@@ -34,6 +51,7 @@
   "manymanycommands.mod.reload.finding.without_path": "line %s: %s",
   "manymanycommands.mod.reload.finding.alone": "%s",
   "manymanycommands.mod.reload.restart_required": "%s: will take effect when the server restarts.",
+  "manymanycommands.mod.reload.restart_required.in_file": "%s, %s: will take effect when the server restarts.",
 
   "manymanycommands.mod.startup.invalid_settings": "Invalid settings: the shipped settings apply. /manymanycommands shows their state."
 }

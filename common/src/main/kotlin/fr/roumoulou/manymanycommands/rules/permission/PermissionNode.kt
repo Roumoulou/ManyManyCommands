@@ -9,9 +9,9 @@ import fr.roumoulou.manymanycommands.MOD_ID
  * Le nœud de permission d'une commande (cahier des charges, chapitre 2.4.2), nommé d'après son chemin dans l'arbre.
  *
  * @property segments le chemin, sans le nom du mod : `[homes, create]`
- * @property defaultProfile le profil qui reçoit le nœud tant que la source des droits ne se prononce pas
+ * @property defaultProfile le profil qui reçoit le nœud tant que la source des droits ne se prononce pas, `null` quand aucun ne le reçoit
  */
-data class PermissionNode(val segments: List<String>, val defaultProfile: Profile) {
+data class PermissionNode(val segments: List<String>, val defaultProfile: Profile?) {
 
     companion object {
 
@@ -42,5 +42,9 @@ data class PermissionNode(val segments: List<String>, val defaultProfile: Profil
      * @param verdict ce que dit la source des droits, `null` quand elle ne se prononce pas
      * @param isGameMaster la source de la commande a le niveau des maîtres du jeu
      */
-    fun isGranted(verdict: Boolean?, isGameMaster: Boolean): Boolean = verdict ?: (defaultProfile == Profile.PLAYER || isGameMaster)
+    fun isGranted(verdict: Boolean?, isGameMaster: Boolean): Boolean = verdict ?: when (defaultProfile) {
+        Profile.PLAYER -> true
+        Profile.ADMINISTRATOR -> isGameMaster
+        null -> false
+    }
 }

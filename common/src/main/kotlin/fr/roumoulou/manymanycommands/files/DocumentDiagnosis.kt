@@ -5,6 +5,7 @@ package fr.roumoulou.manymanycommands.files
 
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
 import fr.roumoulou.manymanycommands.rules.file.FileFinding
+import fr.roumoulou.manymanycommands.rules.file.FindingPath
 import fr.roumoulou.manymanycommands.rules.message.Fragment
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
@@ -55,11 +56,11 @@ internal object DocumentDiagnosis {
         when (descriptor.kind) {
             StructureKind.CLASS, StructureKind.OBJECT -> (element as JsonObject).forEach { (key, value) ->
                 val index = descriptor.getElementIndex(key)
-                if (index == CompositeDecoder.UNKNOWN_NAME) findings += FileFinding(property(path, key), null, CommonMessages.FINDING_UNKNOWN_KEY.with())
-                else inspect(value, descriptor.getElementDescriptor(index), property(path, key), findings)
+                if (index == CompositeDecoder.UNKNOWN_NAME) findings += FileFinding(FindingPath.property(path, key), null, CommonMessages.FINDING_UNKNOWN_KEY.with())
+                else inspect(value, descriptor.getElementDescriptor(index), FindingPath.property(path, key), findings)
             }
-            StructureKind.MAP -> (element as JsonObject).forEach { (key, value) -> inspect(value, descriptor.getElementDescriptor(1), "$path[$key]", findings) }
-            StructureKind.LIST -> (element as JsonArray).forEachIndexed { index, value -> inspect(value, descriptor.getElementDescriptor(0), "$path[$index]", findings) }
+            StructureKind.MAP -> (element as JsonObject).forEach { (key, value) -> inspect(value, descriptor.getElementDescriptor(1), FindingPath.entry(path, key), findings) }
+            StructureKind.LIST -> (element as JsonArray).forEachIndexed { index, value -> inspect(value, descriptor.getElementDescriptor(0), FindingPath.index(path, index), findings) }
             else -> {}
         }
     }
@@ -88,12 +89,5 @@ internal object DocumentDiagnosis {
     private fun wrongNature(path: String, descriptor: SerialDescriptor): FileFinding {
         val expected = natureOf(descriptor)?.with() ?: descriptor.serialName
         return FileFinding(path.ifEmpty { null }, null, CommonMessages.FINDING_WRONG_NATURE.with(expected))
-    }
-
-    /** Le chemin d'une clé sous [parent], dans la grammaire des chemins de Storify : un point, ou des crochets quand la clé porte un point ou un crochet. */
-    private fun property(parent: String, key: String): String = when {
-        key.any { it in ".[]" } -> "$parent[\"$key\"]"
-        parent.isEmpty() -> key
-        else -> "$parent.$key"
     }
 }

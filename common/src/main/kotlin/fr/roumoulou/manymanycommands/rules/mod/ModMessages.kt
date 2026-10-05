@@ -23,7 +23,9 @@ object ModMessages : MessageFamily("mod") {
     val RELOAD_FINDING_WITHOUT_PATH = refusal("reload.finding.without_path")
     val RELOAD_FINDING_ALONE = refusal("reload.finding.alone")
 
+    // Le réglage qui attend le redémarrage : sa clé seule dans settings.json, son fichier puis sa clé dans un fichier de règles.
     val RELOAD_RESTART_REQUIRED = display("reload.restart_required")
+    val RELOAD_RESTART_REQUIRED_IN_FILE = display("reload.restart_required.in_file")
 
     val STARTUP_INVALID_SETTINGS = refusal("startup.invalid_settings")
 }

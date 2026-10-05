@@ -6,9 +6,13 @@ package fr.roumoulou.manymanycommands
 import fr.roumoulou.manymanycommands.commands.ModCommands
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.loader.api.FabricLoader
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.LivingEntity
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -43,6 +47,16 @@ class ManyManyCommands : ModInitializer {
             runtime = null
         }
         ServerPlayConnectionEvents.JOIN.register { handler, _, _ -> runtime?.greet(handler.player) }
+
+        // Les téléportations en attente : le tick fait s'écouler leur délai et annule celles dont le joueur a bougé, est mort ou parti.
+        ServerTickEvents.END_SERVER_TICK.register { runtime?.teleports?.tick() }
+        // Un coup paré par un bouclier ne blesse pas. Un coup mortel n'a pas d'après : la mort a le sien.
+        ServerLivingEntityEvents.AFTER_DAMAGE.register { entity, _, baseDamageTaken, _, blocked -> if (baseDamageTaken > 0f && !blocked) onPlayerHurt(entity) }
+        ServerLivingEntityEvents.AFTER_DEATH.register { entity, _ -> onPlayerHurt(entity) }
+    }
+
+    private fun onPlayerHurt(entity: LivingEntity) {
+        if (entity is ServerPlayer) runtime?.teleports?.onDamaged(entity)
     }
 
     /**
