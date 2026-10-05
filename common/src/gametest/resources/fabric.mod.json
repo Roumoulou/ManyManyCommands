@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "manymanycommands-gametest",
+  "version": "1.0.0",
+  "name": "ManyManyCommands, étage 2 des tests",
+  "description": "Les gametests du mod : un vrai serveur, sans fenêtre, qui joue le mod dans le jeu. Jamais publié.",
+  "authors": ["Roumoulou"],
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "fr.roumoulou.manymanycommands.gametest.ModLoadingGameTests",
+      "fr.roumoulou.manymanycommands.gametest.ModCommandGameTests",
+      "fr.roumoulou.manymanycommands.gametest.PermissionNodeGameTests"
+    ]
+  },
+  "depends": {
+    "manymanycommands": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}
