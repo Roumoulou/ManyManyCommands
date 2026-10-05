@@ -1,0 +1,39 @@
+{
+  "manymanycommands.common.duration.days.one": "%s day",
+  "manymanycommands.common.duration.days.many": "%s days",
+  "manymanycommands.common.duration.hours.one": "%s hour",
+  "manymanycommands.common.duration.hours.many": "%s hours",
+  "manymanycommands.common.duration.minutes.one": "%s minute",
+  "manymanycommands.common.duration.minutes.many": "%s minutes",
+  "manymanycommands.common.duration.seconds.one": "%s second",
+  "manymanycommands.common.duration.seconds.many": "%s seconds",
+  "manymanycommands.common.duration.pair": "%s %s",
+
+  "manymanycommands.common.finding.unknown_key": "unknown key",
+  "manymanycommands.common.finding.wrong_nature": "value of another nature than expected, %s",
+  "manymanycommands.common.finding.not_allowed": "value \"%s\" not allowed, allowed values: %s",
+  "manymanycommands.common.finding.schema_too_recent": "schema version %s newer than the mod's, %s",
+  "manymanycommands.common.finding.unreadable": "cannot be read (%s)",
+
+  "manymanycommands.common.nature.text": "a quoted text",
+  "manymanycommands.common.nature.integer": "a whole number",
+  "manymanycommands.common.nature.number": "a number",
+  "manymanycommands.common.nature.boolean": "true or false",
+  "manymanycommands.common.nature.object": "an object",
+  "manymanycommands.common.nature.list": "a list",
+
+  "manymanycommands.mod.status.version": "ManyManyCommands %s",
+  "manymanycommands.mod.status.source": "Permission source: %s",
+  "manymanycommands.mod.status.file_valid": "%s: valid",
+  "manymanycommands.mod.status.file_refused": "%s: refused",
+
+  "manymanycommands.mod.reload.file_applied": "%s: applied.",
+  "manymanycommands.mod.reload.file_refused": "%s: refused.",
+  "manymanycommands.mod.reload.finding": "%s, line %s: %s",
+  "manymanycommands.mod.reload.finding.without_line": "%s: %s",
+  "manymanycommands.mod.reload.finding.without_path": "line %s: %s",
+  "manymanycommands.mod.reload.finding.alone": "%s",
+  "manymanycommands.mod.reload.restart_required": "%s: will take effect when the server restarts.",
+
+  "manymanycommands.mod.startup.invalid_settings": "Invalid settings: the shipped settings apply. /manymanycommands shows their state."
+}
