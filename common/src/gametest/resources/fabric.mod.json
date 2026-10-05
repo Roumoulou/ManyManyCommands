@@ -11,7 +11,11 @@
     "fabric-gametest": [
       "fr.roumoulou.manymanycommands.gametest.ModLoadingGameTests",
       "fr.roumoulou.manymanycommands.gametest.ModCommandGameTests",
-      "fr.roumoulou.manymanycommands.gametest.PermissionNodeGameTests"
+      "fr.roumoulou.manymanycommands.gametest.PermissionNodeGameTests",
+      "fr.roumoulou.manymanycommands.gametest.RuleSetGameTests",
+      "fr.roumoulou.manymanycommands.gametest.TeleportGameTests",
+      "fr.roumoulou.manymanycommands.gametest.TeleportCancellationGameTests",
+      "fr.roumoulou.manymanycommands.gametest.TeleportArrivalGameTests"
     ]
   },
   "depends": {

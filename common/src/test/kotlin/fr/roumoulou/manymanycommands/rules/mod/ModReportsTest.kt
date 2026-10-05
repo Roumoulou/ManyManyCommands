@@ -97,6 +97,23 @@ class ModReportsTest {
     }
 
     @Test
+    fun `le réglage d'un fichier de règles qui attend le redémarrage se dit avec son fichier, après ceux de settings json`() {
+        val files = listOf(loaded("settings.json", FileReading.Applied("lu")), loaded("rules/homes.json", FileReading.Applied("lu")), loaded("rules/back.json", FileReading.Applied("lu")))
+        val inRules = listOf(FileSetting("rules/homes.json", "enabled"), FileSetting("rules/homes.json", "aliases"), FileSetting("rules/back.json", "enabled"))
+
+        val reload = ModReports.reload(files, awaitingRestart = listOf("mmc-alias"), awaitingRestartInRules = inRules)
+
+        val expected = listOf(
+            ModMessages.RELOAD_RESTART_REQUIRED.with("mmc-alias"),
+            ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with("rules/homes.json", "enabled"),
+            ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with("rules/homes.json", "aliases"),
+            ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with("rules/back.json", "enabled"),
+        )
+        assertEquals(expected, reload.drop(files.size))
+        assertEquals(setOf(MessageType.DISPLAY), reload.drop(files.size).map { it.type }.toSet())
+    }
+
+    @Test
     fun `un fichier valide n'a pas de refus à dire`() {
         assertEquals(emptyList<Any>(), ModReports.refusal(loaded("settings.json", FileReading.Applied("lu"))))
     }

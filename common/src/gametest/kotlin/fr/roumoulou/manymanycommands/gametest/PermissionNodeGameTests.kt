@@ -68,18 +68,19 @@ class PermissionNodeGameTests {
             }
         }
         val lab = Lab.open("permission-source-decides-node-by-node", permissionSource = permissionSource)
+        val applied = Harness.SETTINGS_FILES.map { ModMessages.RELOAD_FILE_APPLIED.key }
 
         val reloaderKeys = Harness.keysSentTo(reloader, lab.runtime) {
-            helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", reloader.createCommandSourceStack()), 1, "le rechargement par le joueur qui a reçu son nœud")
+            helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", reloader.createCommandSourceStack()), applied.size, "le rechargement par le joueur qui a reçu son nœud")
             Harness.assertUnknownCommand(helper, lab.dispatcher, reloader.createCommandSourceStack(), "manymanycommands")
         }
         val demotedKeys = Harness.keysSentTo(demoted, lab.runtime) {
             Harness.assertUnknownCommand(helper, lab.dispatcher, Harness.asGameMaster(demoted), "manymanycommands")
-            helper.assertValueEqual(lab.dispatcher.execute("mmc reload", Harness.asGameMaster(demoted)), 1, "le rechargement par le maître du jeu privé de status")
+            helper.assertValueEqual(lab.dispatcher.execute("mmc reload", Harness.asGameMaster(demoted)), applied.size, "le rechargement par le maître du jeu privé de status")
         }
 
-        helper.assertValueEqual(reloaderKeys, listOf(ModMessages.RELOAD_FILE_APPLIED.key), "ce que reçoit le joueur qui n'a que reload")
-        helper.assertValueEqual(demotedKeys, listOf(ModMessages.RELOAD_FILE_APPLIED.key), "ce que reçoit le maître du jeu privé de status")
+        helper.assertValueEqual(reloaderKeys, applied, "ce que reçoit le joueur qui n'a que reload")
+        helper.assertValueEqual(demotedKeys, applied, "ce que reçoit le maître du jeu privé de status")
         helper.succeed()
     }
 

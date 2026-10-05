@@ -6,12 +6,15 @@ package fr.roumoulou.manymanycommands.gametest
 import fr.roumoulou.manymanycommands.MOD_ID
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.gametest.Harness.Lab
+import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.LanguageSetting
 import fr.roumoulou.manymanycommands.rules.message.MessageType
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
 import fr.roumoulou.manymanycommands.rules.settings.PermissionSourceSetting
+import fr.roumoulou.manymanycommands.rules.wild.WildRules
 import net.fabricmc.fabric.api.gametest.v1.GameTest
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.gametest.framework.GameTestHelper
@@ -27,22 +30,29 @@ import kotlin.io.path.exists
 class ModCommandGameTests {
 
     private companion object {
-        val STATUS_KEYS = listOf(ModMessages.STATUS_VERSION.key, ModMessages.STATUS_SOURCE.key, ModMessages.STATUS_FILE_VALID.key)
-        val APPLIED_KEYS = listOf(ModMessages.RELOAD_FILE_APPLIED.key)
-        val REFUSED_KEYS = listOf(ModMessages.RELOAD_FILE_REFUSED.key, ModMessages.RELOAD_FINDING.key)
+        val FILES = Harness.SETTINGS_FILES
+        val STATUS_KEYS = listOf(ModMessages.STATUS_VERSION.key, ModMessages.STATUS_SOURCE.key) + FILES.map { ModMessages.STATUS_FILE_VALID.key }
+        val APPLIED_KEYS = FILES.map { ModMessages.RELOAD_FILE_APPLIED.key }
+
+        /** `settings.json` refusé pour un constat, les cinq fichiers de règles appliqués. */
+        val SETTINGS_REFUSED_KEYS = listOf(ModMessages.RELOAD_FILE_REFUSED.key, ModMessages.RELOAD_FINDING.key) + APPLIED_KEYS.drop(1)
+
+        /** La place de la ligne de `settings.json` dans l'état, après la version et la source des droits. */
+        const val SETTINGS_STATUS_LINE = 2
     }
 
     // ── Sur le serveur lui-même : ses commandes, son état, son premier lancement ──
 
-    /** Le premier lancement du mod écrit `settings.json` dans le dossier des configurations du serveur, et le serveur démarre sur les réglages livrés. */
+    /** Le premier lancement du mod écrit ses six fichiers de réglages dans le dossier des configurations du serveur, et le serveur démarre sur les réglages livrés. */
     @GameTest
-    fun firstLaunchWritesTheSettingsFile(helper: GameTestHelper) {
+    fun firstLaunchWritesTheSettingsFiles(helper: GameTestHelper) {
         val runtime = Harness.serverRuntime(helper)
-        val settingsFile = FabricLoader.getInstance().configDir.resolve(MOD_ID).resolve(GlobalSettings.FILE_NAME)
+        val modDirectory = FabricLoader.getInstance().configDir.resolve(MOD_ID)
 
-        helper.assertTrue(settingsFile.exists(), "le premier lancement n'a pas écrit $settingsFile")
+        FILES.forEach { helper.assertTrue(modDirectory.resolve(it).exists(), "le premier lancement n'a pas écrit $it") }
         helper.assertValueEqual(runtime.startupSettings, GlobalSettings(), "les réglages du démarrage sont les réglages livrés")
-        helper.assertFalse(runtime.hasShippedSettingsInPlace, "le fichier créé par le mod est valide")
+        Harness.RULES_TABLES.forEach { helper.assertValueEqual(runtime.startupRules(it), it.shipped, "les règles du démarrage de ${it.family} sont les règles livrées") }
+        helper.assertFalse(runtime.hasShippedSettingsInPlace, "les fichiers créés par le mod sont valides")
         helper.succeed()
     }
 
@@ -60,7 +70,26 @@ class ModCommandGameTests {
         helper.assertValueEqual(deliveries.map { it.message.type }.toSet(), setOf(MessageType.DISPLAY), "l'état est un affichage")
         helper.assertValueEqual(deliveries[0].message, ModMessages.STATUS_VERSION.with(runtime.version), "la version du mod")
         helper.assertValueEqual(deliveries[1].message, ModMessages.STATUS_SOURCE.with(PermissionSourceSetting.INTERNAL.value), "la source des droits")
-        helper.assertValueEqual(deliveries[2].message, ModMessages.STATUS_FILE_VALID.with(GlobalSettings.FILE_NAME), "l'état de settings.json")
+        helper.assertValueEqual(deliveries[SETTINGS_STATUS_LINE].message, ModMessages.STATUS_FILE_VALID.with(GlobalSettings.FILE_NAME), "l'état de settings.json")
+        helper.succeed()
+    }
+
+    /**
+     * L'état et le rechargement donnent les six fichiers de réglages : `settings.json`, puis les cinq fichiers de règles, chacun sous son chemin
+     * dans le dossier du mod.
+     */
+    @GameTest
+    fun statusAndReloadGiveTheSixSettingsFiles(helper: GameTestHelper) {
+        val runtime = Harness.serverRuntime(helper)
+        val dispatcher = Harness.serverDispatcher(helper)
+        val player = Harness.player(helper)
+        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
+
+        val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
+        val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
+
+        helper.assertValueEqual(status.drop(SETTINGS_STATUS_LINE), names.map { ModMessages.STATUS_FILE_VALID.with(it) }, "les fichiers de l'état")
+        helper.assertValueEqual(reload, names.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "les fichiers du rechargement")
         helper.succeed()
     }
 
@@ -71,7 +100,7 @@ class ModCommandGameTests {
         val dispatcher = Harness.serverDispatcher(helper)
 
         val status = Harness.keysSentTo(null, runtime) { helper.assertValueEqual(dispatcher.execute("manymanycommands", Harness.console(helper)), 1, "le résultat de l'état, à la console") }
-        val reload = Harness.keysSentTo(null, runtime) { helper.assertValueEqual(dispatcher.execute("manymanycommands reload", Harness.console(helper)), 1, "le résultat du rechargement, à la console") }
+        val reload = Harness.keysSentTo(null, runtime) { helper.assertValueEqual(dispatcher.execute("manymanycommands reload", Harness.console(helper)), FILES.size, "le résultat du rechargement, à la console") }
 
         helper.assertValueEqual(status, STATUS_KEYS, "les lignes de l'état, à la console")
         helper.assertValueEqual(reload, APPLIED_KEYS, "la réponse du rechargement, à la console")
@@ -85,11 +114,11 @@ class ModCommandGameTests {
         val player = Harness.player(helper)
 
         val deliveries = Harness.record(runtime) {
-            helper.assertValueEqual(Harness.serverDispatcher(helper).execute("manymanycommands reload", Harness.asGameMaster(player)), 1, "le résultat de /manymanycommands reload")
+            helper.assertValueEqual(Harness.serverDispatcher(helper).execute("manymanycommands reload", Harness.asGameMaster(player)), FILES.size, "le résultat de /manymanycommands reload")
         }.filter { it.player === player }
 
-        helper.assertValueEqual(deliveries.map { it.message }, listOf(ModMessages.RELOAD_FILE_APPLIED.with(GlobalSettings.FILE_NAME)), "la réponse du rechargement")
-        helper.assertValueEqual(deliveries.single().message.type, MessageType.SUCCESS, "un fichier appliqué est un succès")
+        helper.assertValueEqual(deliveries.map { it.message }, FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "la réponse du rechargement")
+        helper.assertValueEqual(deliveries.map { it.message.type }.toSet(), setOf(MessageType.SUCCESS), "un fichier appliqué est un succès")
         helper.succeed()
     }
 
@@ -101,7 +130,7 @@ class ModCommandGameTests {
         val player = Harness.player(helper)
 
         val status = Harness.keysSentTo(player, runtime) { helper.assertValueEqual(dispatcher.execute("mmc", Harness.asGameMaster(player)), 1, "le résultat de /mmc") }
-        val reload = Harness.keysSentTo(player, runtime) { helper.assertValueEqual(dispatcher.execute("mmc reload", Harness.asGameMaster(player)), 1, "le résultat de /mmc reload") }
+        val reload = Harness.keysSentTo(player, runtime) { helper.assertValueEqual(dispatcher.execute("mmc reload", Harness.asGameMaster(player)), FILES.size, "le résultat de /mmc reload") }
 
         helper.assertValueEqual(status, STATUS_KEYS, "les lignes de /mmc")
         helper.assertValueEqual(reload, APPLIED_KEYS, "la réponse de /mmc reload")
@@ -121,7 +150,7 @@ class ModCommandGameTests {
 
     // ── Sur un état propre au test : les fichiers qu'on réécrit ──
 
-    /** Un fichier invalide au rechargement est refusé avec ses constats, en refus, et les réglages en vigueur restent. L'état le montre refusé. */
+    /** Un fichier invalide au rechargement est refusé avec ses constats, en refus, et les réglages en vigueur restent. Les autres fichiers s'appliquent, et l'état le montre refusé. */
     @GameTest
     fun reloadRefusesAnInvalidFile(helper: GameTestHelper) {
         val lab = Lab.open("reload-refuses-an-invalid-file", settings = """{ "language": "fr" }""")
@@ -129,14 +158,40 @@ class ModCommandGameTests {
         lab.writeSettings("{\n  \"language\": \"en\",\n  \"langage\": \"en\"\n}")
 
         val reload = Harness.record(lab.runtime) {
-            helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)), 0, "aucun fichier appliqué")
+            helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)), FILES.size - 1, "les fichiers appliqués, tous sauf settings.json")
         }.filter { it.player === player }
         val status = Harness.keysSentTo(player, lab.runtime) { lab.dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }
 
-        helper.assertValueEqual(reload.map { it.message.key }, REFUSED_KEYS, "la réponse du rechargement refusé")
-        helper.assertValueEqual(reload.map { it.message.type }.toSet(), setOf(MessageType.REFUSAL), "un fichier refusé et ses constats sont des refus")
+        helper.assertValueEqual(reload.map { it.message.key }, SETTINGS_REFUSED_KEYS, "la réponse du rechargement refusé")
+        helper.assertValueEqual(reload.take(2).map { it.message.type }.toSet(), setOf(MessageType.REFUSAL), "un fichier refusé et ses constats sont des refus")
         helper.assertValueEqual(lab.runtime.settings.language, LanguageSetting.FRENCH, "la langue en vigueur est restée celle d'avant")
-        helper.assertValueEqual(status.last(), ModMessages.STATUS_FILE_REFUSED.key, "l'état de settings.json après le refus")
+        helper.assertValueEqual(status[SETTINGS_STATUS_LINE], ModMessages.STATUS_FILE_REFUSED.key, "l'état de settings.json après le refus")
+        helper.succeed()
+    }
+
+    /**
+     * Un fichier de règles invalide au rechargement est refusé à sa place parmi les six, avec son constat, son chemin et sa ligne. Ses règles en
+     * vigueur restent, les autres fichiers s'appliquent, et l'état le montre refusé.
+     */
+    @GameTest
+    fun reloadRefusesAnInvalidRulesFile(helper: GameTestHelper) {
+        val lab = Lab.open("reload-refuses-an-invalid-rules-file", rules = mapOf(WildRules to """{ "rules": { "default": { "cooldown": 60 } } }"""))
+        val player = Harness.player(helper)
+        lab.writeRules(WildRules, "{\n  \"rules\": {\n    \"default\": {\n      \"cooldown\": -60\n    }\n  }\n}")
+
+        val reload = Harness.record(lab.runtime) {
+            helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)), FILES.size - 1, "les fichiers appliqués, tous sauf rules/wild.json")
+        }.filter { it.player === player }.map { it.message }
+        val status = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
+
+        val wild = FILES.indexOf(WildRules.fileName)
+        helper.assertValueEqual(reload.take(wild), FILES.take(wild).map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "les fichiers d'avant s'appliquent")
+        helper.assertValueEqual(reload[wild], ModMessages.RELOAD_FILE_REFUSED.with(WildRules.fileName), "le fichier de règles refusé")
+        helper.assertValueEqual(reload[wild + 1].key, ModMessages.RELOAD_FINDING.key, "son constat, avec son chemin et sa ligne")
+        helper.assertValueEqual(reload[wild + 1].text.arguments.take(2), listOf<Any>("rules[default].cooldown", 4), "le chemin et la ligne du constat")
+        helper.assertValueEqual(reload.drop(wild + 2), FILES.drop(wild + 1).map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "les fichiers d'après s'appliquent")
+        helper.assertValueEqual(lab.runtime.rules(WildRules).default[WildRules.cooldown], 60L, "le cooldown en vigueur est resté celui d'avant")
+        helper.assertValueEqual(status[SETTINGS_STATUS_LINE + wild], ModMessages.STATUS_FILE_REFUSED.with(WildRules.fileName), "l'état de rules/wild.json après le refus")
         helper.succeed()
     }
 
@@ -146,11 +201,11 @@ class ModCommandGameTests {
         val lab = Lab.open("console-sees-a-refusal-then-the-fix")
         lab.writeSettings("{\n  \"permission-source\": \"luckperms\"\n}")
 
-        val refused = Harness.keysSentTo(null, lab.runtime) { helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.console(helper)), 0, "aucun fichier appliqué") }
+        val refused = Harness.keysSentTo(null, lab.runtime) { helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.console(helper)), FILES.size - 1, "les fichiers appliqués, tous sauf settings.json") }
         lab.writeSettings("{\n  \"language\": \"en\"\n}")
-        val applied = Harness.keysSentTo(null, lab.runtime) { helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.console(helper)), 1, "un fichier appliqué") }
+        val applied = Harness.keysSentTo(null, lab.runtime) { helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", Harness.console(helper)), FILES.size, "tous les fichiers appliqués") }
 
-        helper.assertValueEqual(refused, REFUSED_KEYS, "la réponse du rechargement refusé, à la console")
+        helper.assertValueEqual(refused, SETTINGS_REFUSED_KEYS, "la réponse du rechargement refusé, à la console")
         helper.assertValueEqual(applied, APPLIED_KEYS, "la réponse du rechargement corrigé, à la console")
         helper.assertValueEqual(lab.runtime.settings.language, LanguageSetting.ENGLISH, "la langue rechargée")
         helper.succeed()
@@ -166,8 +221,7 @@ class ModCommandGameTests {
         val reload = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val status = Harness.record(lab.runtime) { lab.dispatcher.execute("mmc", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
 
-        val expected = listOf(
-            ModMessages.RELOAD_FILE_APPLIED.with(GlobalSettings.FILE_NAME),
+        val expected = FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) } + listOf(
             ModMessages.RELOAD_RESTART_REQUIRED.with(GlobalSettings.PERMISSION_SOURCE_KEY),
             ModMessages.RELOAD_RESTART_REQUIRED.with(GlobalSettings.MMC_ALIAS_KEY),
         )
@@ -175,6 +229,33 @@ class ModCommandGameTests {
         helper.assertValueEqual(reload.last().type, MessageType.DISPLAY, "le réglage qui attend le redémarrage est un affichage")
         helper.assertValueEqual(status[1], ModMessages.STATUS_SOURCE.with(PermissionSourceSetting.INTERNAL.value), "la source des droits affichée reste celle du démarrage")
         helper.assertTrue(lab.registerCommands().root.getChild("mmc") != null, "le /reload du jeu garde l'alias du démarrage")
+        helper.succeed()
+    }
+
+    /**
+     * L'activation d'une famille et celle de ses alias se rechargent, et la réponse dit qu'elles attendent le redémarrage, chacune avec son
+     * fichier : cinq fichiers portent `enabled`. Les règles du démarrage ne bougent pas, et chaque rechargement le redit tant que l'écart dure.
+     */
+    @GameTest
+    fun reloadTellsWhichFamilySwitchesWaitForTheRestart(helper: GameTestHelper) {
+        val lab = Lab.open("reload-tells-which-family-switches-wait-for-the-restart")
+        val player = Harness.player(helper)
+        lab.writeRules(HomesRules, """{ "enabled": false, "aliases": false, "rules": { "default": { "max-homes": 9 } } }""")
+        lab.writeRules(BackRules, """{ "enabled": false }""")
+
+        val reload = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
+        val again = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands reload", Harness.console(helper)) }.filter { it.player == null }.map { it.message }
+
+        val expected = FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) } + listOf(
+            ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with(HomesRules.fileName, HomesRules.enabled.key),
+            ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with(HomesRules.fileName, HomesRules.aliases.key),
+            ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with(BackRules.fileName, BackRules.enabled.key),
+        )
+        helper.assertValueEqual(reload, expected, "la réponse du rechargement")
+        helper.assertValueEqual(again, expected, "la réponse du rechargement suivant, à la console")
+        helper.assertValueEqual(reload.last().type, MessageType.DISPLAY, "le réglage qui attend le redémarrage est un affichage")
+        helper.assertValueEqual(lab.runtime.startupRules(HomesRules).settings[HomesRules.enabled], true, "l'activation des homes au démarrage")
+        helper.assertValueEqual(lab.runtime.rules(HomesRules).default[HomesRules.maxHomes], 9L, "la limite de homes, elle, prend effet au rechargement")
         helper.succeed()
     }
 
@@ -192,9 +273,10 @@ class ModCommandGameTests {
 
         val playerSource = Harness.RecordingSource()
         lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player).withSource(playerSource))
-        val playerLine = playerSource.received.single()
+        helper.assertValueEqual(playerSource.received.size, FILES.size, "une ligne par fichier appliqué, lancée par un joueur")
+        val playerLine = playerSource.received.first()
         val playerContents = playerLine.contents as? TranslatableContents ?: throw helper.assertionException("la ligne d'un joueur part sans sa clé de traduction")
-        helper.assertValueEqual(playerSource.journalRequests, 1, "la ligne d'un fichier appliqué se journalise, lancée par un joueur")
+        helper.assertValueEqual(playerSource.journalRequests, FILES.size, "la ligne de chaque fichier appliqué se journalise, lancée par un joueur")
         helper.assertValueEqual(playerContents.key, applied.key, "la clé de la ligne journalisée")
         val fallback = playerContents.fallback ?: throw helper.assertionException("la ligne d'un joueur part sans texte de repli")
         helper.assertValueEqual(fallback, texts.pattern(Language.FRENCH, applied.key), "le repli que lisent les autres opérateurs, dans la langue du joueur")
@@ -202,16 +284,16 @@ class ModCommandGameTests {
 
         val consoleSource = Harness.RecordingSource()
         lab.dispatcher.execute("manymanycommands reload", Harness.console(helper).withSource(consoleSource))
-        val consoleLine = consoleSource.received.single()
-        helper.assertValueEqual(consoleSource.journalRequests, 1, "la ligne d'un fichier appliqué se journalise, lancée depuis la console")
+        val consoleLine = consoleSource.received.first()
+        helper.assertValueEqual(consoleSource.journalRequests, FILES.size, "la ligne de chaque fichier appliqué se journalise, lancée depuis la console")
         helper.assertFalse(consoleLine.contents is TranslatableContents, "la ligne de la console est un texte résolu, sans clé")
         helper.assertValueEqual(consoleLine.string, texts.resolve(Language.FRENCH, applied), "la ligne de la console, dans la langue de la console")
 
         lab.writeSettings("{\n  \"langage\": \"fr\"\n}")
         val refusedSource = Harness.RecordingSource()
         lab.dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player).withSource(refusedSource))
-        helper.assertValueEqual(refusedSource.received.size, 2, "le refus et son constat sont reçus")
-        helper.assertValueEqual(refusedSource.journalRequests, 0, "un refus ne se journalise pas")
+        helper.assertValueEqual(refusedSource.received.size, SETTINGS_REFUSED_KEYS.size, "le refus, son constat et les fichiers appliqués sont reçus")
+        helper.assertValueEqual(refusedSource.journalRequests, FILES.size - 1, "le refus et son constat ne se journalisent pas, les fichiers appliqués si")
         helper.succeed()
     }
 
@@ -227,7 +309,7 @@ class ModCommandGameTests {
         lab.writeSettings("""{ "mmc-alias": true }""")
         val reload = Harness.keysSentTo(null, lab.runtime) { lab.dispatcher.execute("manymanycommands reload", Harness.console(helper)) }
 
-        helper.assertValueEqual(reload, listOf(ModMessages.RELOAD_FILE_APPLIED.key, ModMessages.RELOAD_RESTART_REQUIRED.key), "la réponse du rechargement")
+        helper.assertValueEqual(reload, APPLIED_KEYS + ModMessages.RELOAD_RESTART_REQUIRED.key, "la réponse du rechargement")
         helper.assertTrue(lab.registerCommands().root.getChild("mmc") == null, "/mmc attend le redémarrage pour revenir")
         helper.succeed()
     }
@@ -247,7 +329,7 @@ class ModCommandGameTests {
         try {
             helper.assertValueEqual(lab.runtime.settings, GlobalSettings(), "les réglages livrés s'appliquent")
             val status = Harness.keysSentTo(null, lab.runtime) { lab.dispatcher.execute("manymanycommands", Harness.console(helper)) }
-            helper.assertValueEqual(status.last(), ModMessages.STATUS_FILE_REFUSED.key, "l'état de settings.json")
+            helper.assertValueEqual(status[SETTINGS_STATUS_LINE], ModMessages.STATUS_FILE_REFUSED.key, "l'état de settings.json")
 
             val announced = Harness.record(lab.runtime) {
                 lab.runtime.greet(operator)
@@ -259,6 +341,26 @@ class ModCommandGameTests {
             lab.writeSettings("{\n  \"language\": \"fr\"\n}")
             lab.dispatcher.execute("manymanycommands reload", Harness.console(helper))
             helper.assertValueEqual(Harness.record(lab.runtime) { lab.runtime.greet(operator) }, emptyList(), "l'annonce après le rechargement du fichier corrigé")
+        } finally {
+            server.playerList.deop(operator.nameAndId())
+        }
+        helper.succeed()
+    }
+
+    /** Un fichier de règles invalide au démarrage laisse ses règles livrées en place, et s'annonce comme `settings.json` au joueur qui a le nœud de l'état. */
+    @GameTest
+    fun invalidRulesAtStartupLeaveTheShippedRules(helper: GameTestHelper) {
+        val lab = Lab.open("invalid-rules-at-startup-leave-the-shipped-rules", rules = mapOf(HomesRules to "{\n  \"rules\": {\n    \"Vip\": {}\n  }\n}"))
+        val server = helper.level.server
+        val operator = Harness.player(helper)
+        server.playerList.op(operator.nameAndId(), Optional.of(LevelBasedPermissionSet.GAMEMASTER), Optional.empty())
+        try {
+            helper.assertValueEqual(lab.runtime.rules(HomesRules), HomesRules.shipped, "les règles livrées des homes s'appliquent")
+            val status = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands", Harness.console(helper)) }.map { it.message }
+            helper.assertValueEqual(status[SETTINGS_STATUS_LINE + FILES.indexOf(HomesRules.fileName)], ModMessages.STATUS_FILE_REFUSED.with(HomesRules.fileName), "l'état de rules/homes.json")
+
+            val announced = Harness.record(lab.runtime) { lab.runtime.greet(operator) }
+            helper.assertValueEqual(announced, listOf(Delivery(operator, ModMessages.STARTUP_INVALID_SETTINGS.with())), "l'annonce à la connexion")
         } finally {
             server.playerList.deop(operator.nameAndId())
         }

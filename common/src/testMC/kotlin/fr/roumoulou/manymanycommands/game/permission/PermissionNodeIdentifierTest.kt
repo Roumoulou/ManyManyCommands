@@ -4,6 +4,7 @@
 package fr.roumoulou.manymanycommands.game.permission
 
 import fr.roumoulou.manymanycommands.MOD_ID
+import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.mod.ModNodes
 import fr.roumoulou.manymanycommands.rules.permission.PermissionNode
 import fr.roumoulou.manymanycommands.rules.permission.Profile
@@ -33,5 +34,11 @@ class PermissionNodeIdentifierTest {
 
         assertValidIdentifier(node)
         assertEquals("homes/player/delete", Identifier.tryParse(node.identifier)!!.path)
+    }
+
+    @Test
+    fun `le nœud d'un jeu de règles est un identifiant valide pour le jeu, quel que soit le nom du jeu`() {
+        listOf("default", "vip", "vip_2-gold", "0", "a".repeat(32)).forEach { assertValidIdentifier(HomesRules.setNode(it)) }
+        assertEquals("rules/homes/vip", Identifier.tryParse(HomesRules.setNode("vip").identifier)!!.path)
     }
 }
