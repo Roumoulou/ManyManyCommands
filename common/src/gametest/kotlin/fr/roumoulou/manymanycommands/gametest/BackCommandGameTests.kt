@@ -164,11 +164,11 @@ class BackCommandGameTests {
         helper.assertValueEqual(unavailable.result, 0, "le résultat du refus")
         helper.assertTrue(faulty.contentEquals(file.readBytes()), "le fichier fautif n'est pas réécrit")
         val status = Harness.keysSentTo(null, lab.runtime) { lab.dispatcher.execute("manymanycommands", console) }
-        helper.assertValueEqual(status.last(), ModMessages.STATUS_FILE_REFUSED.key, "l'état montre world/back.json refusé")
+        helper.assertValueEqual(status[2 + Harness.FILES.indexOf("world/back.json")], ModMessages.STATUS_FILE_REFUSED.key, "l'état montre world/back.json refusé")
 
         lab.writeData("back", """{ "players": {} }""")
         val reload = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands reload", console) }.map { it.message }
-        helper.assertValueEqual(reload.last(), ModMessages.RELOAD_FILE_APPLIED.with("world/back.json"), "le fichier corrigé s'applique au rechargement")
+        helper.assertValueEqual(reload[Harness.FILES.indexOf("world/back.json")], ModMessages.RELOAD_FILE_APPLIED.with("world/back.json"), "le fichier corrigé s'applique au rechargement")
         helper.assertValueEqual(run(lab, player, "back").messages, listOf(BackMessages.NO_POSITION.with()), "le retour remis en service répond par ses propres refus")
         helper.succeed()
     }

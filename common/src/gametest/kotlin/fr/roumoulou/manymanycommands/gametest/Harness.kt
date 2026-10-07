@@ -50,7 +50,7 @@ object Harness {
     val SETTINGS_FILES: List<String> = listOf(GlobalSettings.FILE_NAME) + RULES_TABLES.map { it.fileName }
 
     /** Les fichiers de données du monde, par le nom que les messages leur donnent, dans l'ordre où l'état et le rechargement les donnent. */
-    val DATA_FILES: List<String> = listOf(DataRules.fileName(HomesRules.family), DataRules.fileName(WarpsRules.family), DataRules.fileName(BackRules.family))
+    val DATA_FILES: List<String> = listOf(DataRules.fileName(HomesRules.family), DataRules.fileName(WarpsRules.family), DataRules.fileName(BackRules.family), DataRules.fileName(WildRules.family))
 
     /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent. */
     val FILES: List<String> = SETTINGS_FILES + DATA_FILES

@@ -12,6 +12,7 @@ import fr.roumoulou.manymanycommands.rules.message.MessageFamily
 import fr.roumoulou.manymanycommands.rules.message.TextPattern
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import fr.roumoulou.manymanycommands.rules.warps.WarpsMessages
+import fr.roumoulou.manymanycommands.rules.wild.WildMessages
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -20,7 +21,7 @@ import org.junit.jupiter.api.Test
 class TextCatalogTest {
 
     /** Toutes les familles du mod : une famille oubliée ici laisse ses clés orphelines dans les fichiers, et le test qui les compte échoue. */
-    private val families: List<MessageFamily> = listOf(CommonMessages, ModMessages, HomesMessages, WarpsMessages, BackMessages)
+    private val families: List<MessageFamily> = listOf(CommonMessages, ModMessages, HomesMessages, WarpsMessages, BackMessages, WildMessages)
 
     private val texts = TextCatalog.load()
 

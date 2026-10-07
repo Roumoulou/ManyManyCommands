@@ -52,7 +52,7 @@ class ModRuntimeTest {
         private val SETTINGS_FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
 
         /** Tous les fichiers : les réglages, puis les données du monde. */
-        private val FILES = SETTINGS_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json")
+        private val FILES = SETTINGS_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json")
 
         private val TABLES = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
 
@@ -122,14 +122,14 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'état donne la version, la source des droits et les neuf fichiers, les données du monde en dernier`() {
+    fun `l'état donne la version, la source des droits et les dix fichiers, les données du monde en dernier`() {
         val expected = listOf(ModMessages.STATUS_VERSION.with(VERSION), ModMessages.STATUS_SOURCE.with("internal")) + FILES.map { ModMessages.STATUS_FILE_VALID.with(it) }
 
         assertEquals(expected, start().status())
     }
 
     @Test
-    fun `le rechargement donne une ligne par fichier, les neuf appliqués`() {
+    fun `le rechargement donne une ligne par fichier, les dix appliqués`() {
         assertEquals(FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, start().reload())
     }
 
@@ -151,10 +151,12 @@ class ModRuntimeTest {
         assertTrue(homesPath.exists(), "homes.json must be created in the mod's folder of the world")
         assertTrue(worldDirectory.resolve("warps.json").exists(), "warps.json must be created in the world folder of the mod")
         assertTrue(worldDirectory.resolve("back.json").exists(), "back.json must be created in the mod's folder of the world")
+        assertTrue(worldDirectory.resolve("wild.json").exists(), "wild.json must be created in the world folder of the mod")
         assertEquals(FILES, runtime.files.map { it.name })
         assertEquals(HomesData(), runtime.worldData?.homes?.content)
         assertEquals(WarpsData(), runtime.worldData?.warps?.content)
         assertEquals(true, runtime.worldData?.back?.isAvailable)
+        assertEquals(true, runtime.worldData?.wild?.isAvailable)
         assertFalse(runtime.hasShippedSettingsInPlace, "A data file is not a settings file: nothing shipped stands in its place")
     }
 

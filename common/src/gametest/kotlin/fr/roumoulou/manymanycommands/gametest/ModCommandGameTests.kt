@@ -7,7 +7,6 @@ import fr.roumoulou.manymanycommands.MOD_ID
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.gametest.Harness.Lab
 import fr.roumoulou.manymanycommands.rules.back.BackRules
-import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.LanguageSetting
@@ -60,7 +59,7 @@ class ModCommandGameTests {
     }
 
     /**
-     * Le démarrage du serveur ouvre les fichiers de données dans le dossier du mod de son monde : `homes.json` y naît vide et disponible, et
+     * Le démarrage du serveur ouvre les fichiers de données dans le dossier du mod de son monde : `homes.json` y est créé et disponible, et
      * l'état comme le rechargement le donnent sous `world/`, après les fichiers de réglages.
      */
     @GameTest
@@ -71,12 +70,11 @@ class ModCommandGameTests {
 
         val homes = runtime.worldData?.homes ?: throw helper.assertionException("le démarrage du serveur n'a pas ouvert les données du monde")
         helper.assertTrue(homesFile.exists(), "homes.json n'a pas été créé sous le dossier du monde : $homesFile")
-        helper.assertTrue(homes.isAvailable, "les homes sont disponibles sur un fichier né vide")
-        helper.assertValueEqual(homes.content ?: throw helper.assertionException("le fichier né vide n'a pas de contenu"), HomesData(), "le fichier né vide ne tient aucun joueur")
+        helper.assertTrue(homes.isAvailable, "les homes sont disponibles sur le fichier du monde")
         val status = Harness.keysSentTo(null, runtime) { Harness.serverDispatcher(helper).execute("manymanycommands", Harness.console(helper)) }
         val reload = Harness.record(runtime) { Harness.serverDispatcher(helper).execute("manymanycommands reload", Harness.console(helper)) }.map { it.message }
         helper.assertValueEqual(status.size, SETTINGS_STATUS_LINE + FILES.size, "l'état donne tous les fichiers")
-        helper.assertValueEqual(reload.takeLast(3), listOf("world/homes.json", "world/warps.json", "world/back.json").map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "le rechargement donne les données du monde en dernier, sous world/")
+        helper.assertValueEqual(reload.takeLast(4), listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json").map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "le rechargement donne les données du monde en dernier, sous world/")
         helper.succeed()
     }
 
@@ -107,7 +105,7 @@ class ModCommandGameTests {
         val runtime = Harness.serverRuntime(helper)
         val dispatcher = Harness.serverDispatcher(helper)
         val player = Harness.player(helper)
-        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json", "world/warps.json", "world/back.json")
+        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json")
 
         val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
