@@ -3,11 +3,12 @@
 
 package fr.roumoulou.manymanycommands.rules.common
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Le nom d'un home ou d'un warp, et celui, en minuscules, d'un jeu de règles, d'un groupe ou d'une clé d'accès (cahier des charges, chapitre 2.3). */
+/** Le nom d'un home ou d'un warp, celui, en minuscules, d'un jeu de règles, d'un groupe ou d'une clé d'accès (cahier des charges, chapitre 2.3), et l'ordre d'une liste de noms. */
 class NameRulesTest {
 
     @Test
@@ -47,5 +48,10 @@ class NameRulesTest {
         listOf("Vip", "VIP", "invité", "v i p", "vip.gold", "vip/gold", "vip:gold", " vip").forEach { name ->
             assertFalse(NameRules.isLowercaseName(name), "'$name' must be refused")
         }
+    }
+
+    @Test
+    fun `une liste de noms se trie sans tenir compte de la casse, la majuscule d'abord à égalité`() {
+        assertEquals(listOf("atelier", "Base", "base", "Zoo"), listOf("base", "Zoo", "Base", "atelier").sortedWith(NameRules.LISTING_ORDER))
     }
 }
