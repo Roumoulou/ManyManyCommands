@@ -10,6 +10,7 @@ import fr.roumoulou.manymanycommands.files.homes.HomesRulesFile
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.files.settings.GlobalSettingsFile
 import fr.roumoulou.manymanycommands.files.tpa.TpaRulesFile
+import fr.roumoulou.manymanycommands.files.warps.WarpsDataFile
 import fr.roumoulou.manymanycommands.files.warps.WarpsRulesFile
 import fr.roumoulou.manymanycommands.files.wild.WildRulesFile
 import fr.roumoulou.manymanycommands.game.message.Messenger
@@ -43,6 +44,7 @@ import fr.roumoulou.manymanycommands.rules.teleport.QuotaLedger
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsage
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
+import fr.roumoulou.manymanycommands.rules.warps.WarpsData
 import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
 import net.minecraft.commands.CommandSourceStack
@@ -191,14 +193,21 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         /** `homes.json` : les homes et la plage de quota de chaque joueur. */
         val homes: DataFile<HomesData> = HomesDataFile.at(directory)
 
+        /** `warps.json` : les warps du serveur, et la plage de quota de chaque joueur. */
+        val warps: DataFile<WarpsData> = WarpsDataFile.at(directory)
+
         /** `back.json` : la plage de quota de chaque joueur, et rien d'autre. */
         val back: DataFile<BackData> = BackDataFile.at(directory)
 
-        /** Les fichiers de données, dans l'ordre où l'état et le rechargement les donnent. */
-        val files: List<DataFile<*>> = listOf(homes, back)
+        /** Les fichiers de données, dans l'ordre où l'état et le rechargement les donnent, celui du cahier des charges. */
+        val files: List<DataFile<*>> = listOf(homes, warps, back)
 
         /** Les plages de quota conservées dans un fichier de données, par famille : celles des familles qui ont le leur. */
-        val quotas: Map<String, DataFileQuotas<*>> = mapOf(HomesRules.family to DataFileQuotas(homes, PlayerHomes()), BackRules.family to DataFileQuotas(back, NoHoldings))
+        val quotas: Map<String, DataFileQuotas<*>> = mapOf(
+            HomesRules.family to DataFileQuotas.ofFamily(homes, PlayerHomes()),
+            WarpsRules.family to DataFileQuotas(warps, { data, player -> data.players[player]?.quota }, { data, player, name, usage -> data.copy(players = data.players.withQuota(player, name, usage, NoHoldings)) }),
+            BackRules.family to DataFileQuotas.ofFamily(back, NoHoldings),
+        )
 
         init {
             files.forEach { it.load() }

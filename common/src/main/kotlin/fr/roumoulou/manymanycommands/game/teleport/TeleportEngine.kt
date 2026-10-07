@@ -23,7 +23,6 @@ import fr.roumoulou.manymanycommands.rules.teleport.TeleportSteps
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.stats.Stats
-import net.minecraft.world.entity.Leashable
 import java.time.Clock
 import java.time.Instant
 import java.util.UUID
@@ -147,20 +146,14 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
         }
     }
 
-    /**
-     * L'étape 6. Le joueur part seul (cahier des charges, chapitre 2.5.7) : le jeu lui fait quitter sa monture. Ses laisses tombent ici, parce
-     * que le jeu garderait en laisse un animal resté à portée de l'arrivée. Ses passagers descendent ici aussi : le jeu ne laisse aucune entité
-     * monter sur un joueur, mais emmènerait celle qu'un autre mod y aurait mise.
-     */
+    /** L'étape 6. Le joueur part seul (cahier des charges, chapitre 2.5.7), puis le cooldown démarre, l'usage se compte et la famille l'apprend. */
     private fun arrive(journey: Journey, now: Instant) {
         val request = journey.request
         val player = request.player
         val from = Location.of(player)
         val to = journey.destination
         journeys.remove(player.uuid)
-        player.ejectPassengers()
-        Leashable.leashableLeashedTo(player).forEach { it.dropLeash() }
-        if (!player.teleportTo(to.level, to.x, to.y, to.z, emptySet(), to.yaw, to.pitch, true)) {
+        if (!Departures.leave(player, to)) {
             // Le jeu ne refuse de téléporter qu'un joueur déjà retiré du monde, que le tick annule avant d'en arriver ici.
             ManyManyCommands.LOGGER.warn("The game refused to teleport {} to {} at {} {} {}", player.scoreboardName, to.dimension, to.x, to.y, to.z)
             return

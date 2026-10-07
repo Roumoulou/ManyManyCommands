@@ -8,6 +8,9 @@ object NameRules {
 
     private const val MAX_LENGTH = 32
 
+    /** L'ordre d'une liste de noms (`homes.md` et `warps.md` des specs) : alphabétique sans tenir compte de la casse, la majuscule d'abord à égalité. */
+    val LISTING_ORDER: Comparator<String> = compareBy<String> { it.lowercase() }.thenBy { it }
+
     /**
      * Le nom d'un home ou d'un warp : de 1 à 32 caractères, pris parmi les lettres `A` à `Z` et `a` à `z`, les chiffres, `_` et `-`. Les
      * majuscules comptent : `base` et `Base` sont deux noms (chapitre 2.1).

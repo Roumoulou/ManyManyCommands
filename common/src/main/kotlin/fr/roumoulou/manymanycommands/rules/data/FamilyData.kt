@@ -29,4 +29,10 @@ data class FamilyData<HOLDINGS : Holdings>(val players: Map<UUID, PlayerEntry<HO
 
     /** Les données où [player] a [entry], à sa place s'il en avait une, ou plus d'entrée quand elle ne porte que son nom. */
     fun with(player: UUID, entry: PlayerEntry<HOLDINGS>): FamilyData<HOLDINGS> = FamilyData(if (entry.isEmpty) players - player else players + (player to entry))
+
+    /**
+     * Les données où [player] a la plage [usage], sous [name], son nom du moment, et ce que la famille tient déjà de lui, ou [empty] quand elle
+     * ne tient encore rien.
+     */
+    fun withQuota(player: UUID, name: String, usage: QuotaUsage, empty: HOLDINGS): FamilyData<HOLDINGS> = with(player, PlayerEntry(name, this[player]?.holdings ?: empty, usage))
 }

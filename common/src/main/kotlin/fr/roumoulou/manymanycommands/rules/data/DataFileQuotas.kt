@@ -13,16 +13,27 @@ import java.util.UUID
  *
  * Tant que le fichier est indisponible, rien ne se lit ni ne s'écrit : la famille l'est aussi.
  *
- * @param empty ce que la famille tient d'un joueur qui n'a encore rien, pour l'entrée dont seule la plage compte
+ * @param usageIn la plage d'un joueur dans le contenu du fichier
+ * @param withUsage le contenu où un joueur, sous son nom du moment, a une plage
  */
-class DataFileQuotas<HOLDINGS : Holdings>(private val file: DataFile<FamilyData<HOLDINGS>>, private val empty: HOLDINGS) {
+class DataFileQuotas<CONTENT : Any>(private val file: DataFile<CONTENT>, private val usageIn: (CONTENT, UUID) -> QuotaUsage?, private val withUsage: (CONTENT, UUID, String, QuotaUsage) -> CONTENT) {
 
-    fun usage(player: UUID): QuotaUsage? = file.content?.get(player)?.quota
+    companion object {
+
+        /**
+         * Les plages d'un fichier dont le contenu est l'entrée de chaque joueur.
+         *
+         * @param empty ce que la famille tient d'un joueur qui n'a encore rien, pour l'entrée dont seule la plage compte
+         */
+        fun <HOLDINGS : Holdings> ofFamily(file: DataFile<FamilyData<HOLDINGS>>, empty: HOLDINGS): DataFileQuotas<FamilyData<HOLDINGS>> =
+            DataFileQuotas(file, { data, player -> data[player]?.quota }, { data, player, name, usage -> data.withQuota(player, name, usage, empty) })
+    }
+
+    fun usage(player: UUID): QuotaUsage? = file.content?.let { usageIn(it, player) }
 
     /** Garde la plage de [player] après un usage, sous [playerName], son nom du moment. */
     fun record(player: UUID, playerName: String, usage: QuotaUsage) {
         val data = file.content ?: return
-        val entry = data[player]
-        file.update(data.with(player, PlayerEntry(playerName, entry?.holdings ?: empty, usage)))
+        file.update(withUsage(data, player, playerName, usage))
     }
 }

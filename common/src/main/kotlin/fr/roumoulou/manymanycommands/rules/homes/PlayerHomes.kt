@@ -25,12 +25,6 @@ import fr.roumoulou.manymanycommands.rules.teleport.DestinationTexts
  */
 data class PlayerHomes(val homes: Map<String, Position> = emptyMap(), val designated: String? = null) : Holdings {
 
-    companion object {
-
-        /** L'ordre de la liste (chapitre 3.4) : alphabétique sans tenir compte de la casse, la majuscule d'abord à égalité. */
-        val LISTING_ORDER: Comparator<String> = compareBy<String> { it.lowercase() }.thenBy { it }
-    }
-
     init {
         require(designated == null || designated in homes) { "The designated home '$designated' is not one of the homes" }
     }
@@ -42,8 +36,8 @@ data class PlayerHomes(val homes: Map<String, Position> = emptyMap(), val design
 
     operator fun get(name: String): Position? = homes[name]
 
-    /** Les noms dans l'ordre de la liste. */
-    fun sortedNames(): List<String> = homes.keys.sortedWith(LISTING_ORDER)
+    /** Les noms dans l'ordre de la liste (chapitre 3.4). */
+    fun sortedNames(): List<String> = homes.keys.sortedWith(NameRules.LISTING_ORDER)
 
     /** `/homes create <name>` (chapitre 3.1) : un home à [position], qui ne remplace jamais un home existant. */
     fun create(name: String, position: Position, ruleSet: RuleValues): HomesChange {

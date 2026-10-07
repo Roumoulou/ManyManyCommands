@@ -25,6 +25,9 @@ object CommonMessages : MessageFamily("common") {
     // La source d'une commande (chapitre 2.8) : le refus de la console pour une commande qui a besoin d'une position.
     val IN_GAME_ONLY = refusal("source.in_game_only")
 
+    // Le placement (chapitre 2.9) : le refus d'un point hors de la bordure du monde ou de la hauteur de la dimension.
+    val PLACEMENT_OUT_OF_BOUNDS = refusal("placement.out_of_bounds")
+
     // Ce qu'un joueur lit au survol d'un message, la console le reçoit en clair à la suite du message.
     val CONSOLE_DETAIL = fragment("console.detail")
 
