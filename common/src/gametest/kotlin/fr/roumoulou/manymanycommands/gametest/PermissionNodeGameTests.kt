@@ -68,7 +68,7 @@ class PermissionNodeGameTests {
             }
         }
         val lab = Lab.open("permission-source-decides-node-by-node", permissionSource = permissionSource)
-        val applied = Harness.SETTINGS_FILES.map { ModMessages.RELOAD_FILE_APPLIED.key }
+        val applied = Harness.FILES.map { ModMessages.RELOAD_FILE_APPLIED.key }
 
         val reloaderKeys = Harness.keysSentTo(reloader, lab.runtime) {
             helper.assertValueEqual(lab.dispatcher.execute("manymanycommands reload", reloader.createCommandSourceStack()), applied.size, "le rechargement par le joueur qui a reçu son nœud")

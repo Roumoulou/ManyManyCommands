@@ -7,8 +7,25 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Le nom d'un jeu de règles, d'un groupe, la clé d'accès d'un warp (cahier des charges, chapitre 2.3). */
+/** Le nom d'un home ou d'un warp, et celui, en minuscules, d'un jeu de règles, d'un groupe ou d'une clé d'accès (cahier des charges, chapitre 2.3). */
 class NameRulesTest {
+
+    @Test
+    fun `un nom compte de 1 à 32 caractères, lettres des deux casses, chiffres, tiret bas et trait d'union`() {
+        assertTrue(NameRules.isName("Base"))
+        assertTrue(NameRules.isName("a".repeat(32)))
+        assertTrue(NameRules.isName("Mine_2-Gold"))
+        assertTrue(NameRules.isName("0"))
+        assertFalse(NameRules.isName(""))
+        assertFalse(NameRules.isName("a".repeat(33)))
+    }
+
+    @Test
+    fun `un nom refuse les accents, les espaces et les autres signes`() {
+        listOf("été", "ma maison", "base.2", "base/2", "base:2", " base", "base\n").forEach { name ->
+            assertFalse(NameRules.isName(name), "'$name' must be refused")
+        }
+    }
 
     @Test
     fun `un nom en minuscules compte de 1 à 32 caractères`() {

@@ -5,6 +5,7 @@ package fr.roumoulou.manymanycommands.files.message
 
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
 import fr.roumoulou.manymanycommands.rules.common.DurationWording
+import fr.roumoulou.manymanycommands.rules.homes.HomesMessages
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.MessageFamily
 import fr.roumoulou.manymanycommands.rules.message.TextPattern
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Test
 class TextCatalogTest {
 
     /** Toutes les familles du mod : une famille oubliée ici laisse ses clés orphelines dans les fichiers, et le test qui les compte échoue. */
-    private val families: List<MessageFamily> = listOf(CommonMessages, ModMessages)
+    private val families: List<MessageFamily> = listOf(CommonMessages, ModMessages, HomesMessages)
 
     private val texts = TextCatalog.load()
 

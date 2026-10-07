@@ -7,6 +7,7 @@ import fr.roumoulou.manymanycommands.MOD_ID
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.gametest.Harness.Lab
 import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.LanguageSetting
@@ -20,6 +21,7 @@ import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.gametest.framework.GameTestHelper
 import net.minecraft.network.chat.contents.TranslatableContents
 import net.minecraft.server.permissions.LevelBasedPermissionSet
+import net.minecraft.world.level.storage.LevelResource
 import java.util.Optional
 import kotlin.io.path.exists
 
@@ -30,11 +32,12 @@ import kotlin.io.path.exists
 class ModCommandGameTests {
 
     private companion object {
-        val FILES = Harness.SETTINGS_FILES
+        /** Tous les fichiers du mod : les six fichiers de réglages, puis les données du monde. */
+        val FILES = Harness.FILES
         val STATUS_KEYS = listOf(ModMessages.STATUS_VERSION.key, ModMessages.STATUS_SOURCE.key) + FILES.map { ModMessages.STATUS_FILE_VALID.key }
         val APPLIED_KEYS = FILES.map { ModMessages.RELOAD_FILE_APPLIED.key }
 
-        /** `settings.json` refusé pour un constat, les cinq fichiers de règles appliqués. */
+        /** `settings.json` refusé pour un constat, les autres fichiers appliqués. */
         val SETTINGS_REFUSED_KEYS = listOf(ModMessages.RELOAD_FILE_REFUSED.key, ModMessages.RELOAD_FINDING.key) + APPLIED_KEYS.drop(1)
 
         /** La place de la ligne de `settings.json` dans l'état, après la version et la source des droits. */
@@ -49,10 +52,31 @@ class ModCommandGameTests {
         val runtime = Harness.serverRuntime(helper)
         val modDirectory = FabricLoader.getInstance().configDir.resolve(MOD_ID)
 
-        FILES.forEach { helper.assertTrue(modDirectory.resolve(it).exists(), "le premier lancement n'a pas écrit $it") }
+        Harness.SETTINGS_FILES.forEach { helper.assertTrue(modDirectory.resolve(it).exists(), "le premier lancement n'a pas écrit $it") }
         helper.assertValueEqual(runtime.startupSettings, GlobalSettings(), "les réglages du démarrage sont les réglages livrés")
         Harness.RULES_TABLES.forEach { helper.assertValueEqual(runtime.startupRules(it), it.shipped, "les règles du démarrage de ${it.family} sont les règles livrées") }
         helper.assertFalse(runtime.hasShippedSettingsInPlace, "les fichiers créés par le mod sont valides")
+        helper.succeed()
+    }
+
+    /**
+     * Le démarrage du serveur ouvre les fichiers de données dans le dossier du mod de son monde : `homes.json` y naît vide et disponible, et
+     * l'état comme le rechargement le donnent sous `world/`, après les fichiers de réglages.
+     */
+    @GameTest
+    fun serverStartOpensTheDataFilesOfTheWorld(helper: GameTestHelper) {
+        val runtime = Harness.serverRuntime(helper)
+        val worldRoot = helper.level.server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize()
+        val homesFile = worldRoot.resolve(MOD_ID).resolve("homes.json")
+
+        val homes = runtime.worldData?.homes ?: throw helper.assertionException("le démarrage du serveur n'a pas ouvert les données du monde")
+        helper.assertTrue(homesFile.exists(), "homes.json n'a pas été créé sous le dossier du monde : $homesFile")
+        helper.assertTrue(homes.isAvailable, "les homes sont disponibles sur un fichier né vide")
+        helper.assertValueEqual(homes.content ?: throw helper.assertionException("le fichier né vide n'a pas de contenu"), HomesData(), "le fichier né vide ne tient aucun joueur")
+        val status = Harness.keysSentTo(null, runtime) { Harness.serverDispatcher(helper).execute("manymanycommands", Harness.console(helper)) }
+        val reload = Harness.record(runtime) { Harness.serverDispatcher(helper).execute("manymanycommands reload", Harness.console(helper)) }.map { it.message }
+        helper.assertValueEqual(status.size, SETTINGS_STATUS_LINE + FILES.size, "l'état donne les sept fichiers")
+        helper.assertValueEqual(reload.last(), ModMessages.RELOAD_FILE_APPLIED.with("world/homes.json"), "le rechargement donne les données du monde en dernier, sous world/")
         helper.succeed()
     }
 
@@ -75,15 +99,15 @@ class ModCommandGameTests {
     }
 
     /**
-     * L'état et le rechargement donnent les six fichiers de réglages : `settings.json`, puis les cinq fichiers de règles, chacun sous son chemin
-     * dans le dossier du mod.
+     * L'état et le rechargement donnent chaque fichier du mod : `settings.json`, puis les cinq fichiers de règles, chacun sous son chemin dans
+     * le dossier du mod, puis les données du monde sous `world/`.
      */
     @GameTest
-    fun statusAndReloadGiveTheSixSettingsFiles(helper: GameTestHelper) {
+    fun statusAndReloadGiveEveryFile(helper: GameTestHelper) {
         val runtime = Harness.serverRuntime(helper)
         val dispatcher = Harness.serverDispatcher(helper)
         val player = Harness.player(helper)
-        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
+        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json")
 
         val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }

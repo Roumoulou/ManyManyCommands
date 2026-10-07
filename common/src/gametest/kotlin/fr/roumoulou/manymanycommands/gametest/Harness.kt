@@ -10,6 +10,7 @@ import fr.roumoulou.manymanycommands.ModRuntime
 import fr.roumoulou.manymanycommands.commands.ModCommands
 import fr.roumoulou.manymanycommands.game.permission.PermissionSource
 import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.data.DataRules
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.ruleset.RulesTable
@@ -48,6 +49,12 @@ object Harness {
     /** Les six fichiers de réglages, par le nom que les messages leur donnent : `settings.json`, puis les cinq fichiers de règles. */
     val SETTINGS_FILES: List<String> = listOf(GlobalSettings.FILE_NAME) + RULES_TABLES.map { it.fileName }
 
+    /** Les fichiers de données du monde, par le nom que les messages leur donnent. */
+    val DATA_FILES: List<String> = listOf(DataRules.fileName(HomesRules.family))
+
+    /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent. */
+    val FILES: List<String> = SETTINGS_FILES + DATA_FILES
+
     /** L'état du mod pour le serveur GameTest, ouvert par le point d'entrée avant son démarrage. */
     fun serverRuntime(helper: GameTestHelper): ModRuntime = ManyManyCommands.runtime ?: throw helper.assertionException("le serveur GameTest n'a pas d'état du mod")
 
@@ -84,6 +91,20 @@ object Harness {
     }
 
     /**
+     * La sous-commande n'existe pas pour [source], qui a la commande : le répartiteur du jeu, qui connaît le début de la ligne, refuse ce qui
+     * suit comme un argument incorrect, sa réponse à une sous-commande cachée, et rien ne s'exécute.
+     */
+    fun assertUnknownSubcommand(helper: GameTestHelper, dispatcher: CommandDispatcher<CommandSourceStack>, source: CommandSourceStack, command: String) {
+        try {
+            dispatcher.execute(command, source)
+        } catch (e: CommandSyntaxException) {
+            helper.assertValueEqual(e.type, CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownArgument(), "le refus de /$command")
+            return
+        }
+        throw helper.assertionException("/$command s'est exécutée alors que sa sous-commande ne devait pas exister pour cette source")
+    }
+
+    /**
      * Une source que le test met à la place de celle d'un joueur ou de la console (`withSource`) : elle garde ce que la source reçoit, et compte
      * les réponses que le jeu a voulu journaliser. Le jeu ne lui demande [shouldInformAdmins] que pour une réponse journalisée. Elle répond non :
      * rien ne part chez les opérateurs ni au journal du serveur.
@@ -110,8 +131,9 @@ object Harness {
     }
 
     /**
-     * Un état du mod propre à un test, avec ses commandes : ouvert sur un dossier à lui, sous le dossier des configurations du serveur, que chaque
-     * run remet à neuf.
+     * Un état du mod propre à un test, avec ses commandes et son monde : ouvert sur un dossier à lui, sous le dossier des configurations du
+     * serveur, que chaque run remet à neuf. Ses fichiers de données vivent dans `world\` de ce dossier, ouvert comme le fait le démarrage du
+     * serveur.
      */
     class Lab private constructor(val directory: Path, permissionSource: PermissionSource, clock: Clock) {
 
@@ -121,6 +143,7 @@ object Harness {
              * @param name le nom du dossier, propre au test
              * @param settings le contenu de `settings.json` avant l'ouverture, `null` pour laisser le mod le créer
              * @param rules le contenu des fichiers de règles avant l'ouverture, par leur table : le mod crée ceux qui manquent
+             * @param data le contenu des fichiers de données avant l'ouverture, par leur famille : le mod crée vides ceux qui manquent
              * @param clock l'horloge de l'état, celle de la machine quand le test ne mesure aucun temps
              */
             @OptIn(ExperimentalPathApi::class)
@@ -128,25 +151,33 @@ object Harness {
                 name: String,
                 settings: String? = null,
                 rules: Map<RulesTable, String> = emptyMap(),
+                data: Map<String, String> = emptyMap(),
                 permissionSource: PermissionSource = PermissionSource.SILENT,
                 clock: Clock = Clock.systemUTC(),
             ): Lab {
-                val directory = FabricLoader.getInstance().configDir.resolve("manymanycommands-gametest").resolve(name)
+                val directory = directory(name)
                 directory.deleteRecursively()
                 directory.createDirectories()
                 if (settings != null) directory.resolve(GlobalSettings.FILE_NAME).writeText(settings)
-                rules.forEach { (table, json) -> write(directory, table, json) }
+                rules.forEach { (table, json) -> write(directory.resolve(table.fileName), json) }
+                data.forEach { (family, json) -> write(worldDirectory(directory).resolve("$family.json"), json) }
                 return Lab(directory, permissionSource, clock)
             }
 
-            private fun write(directory: Path, table: RulesTable, json: String) {
-                val file = directory.resolve(table.fileName)
+            /** Rouvre un état sur le dossier qu'un `open` du même [name] a laissé, fichiers compris, comme le fait un redémarrage du serveur. */
+            fun reopen(name: String, permissionSource: PermissionSource = PermissionSource.SILENT, clock: Clock = Clock.systemUTC()): Lab = Lab(directory(name), permissionSource, clock)
+
+            private fun directory(name: String): Path = FabricLoader.getInstance().configDir.resolve("manymanycommands-gametest").resolve(name)
+
+            private fun worldDirectory(directory: Path): Path = directory.resolve("world")
+
+            private fun write(file: Path, json: String) {
                 file.parent.createDirectories()
                 file.writeText(json)
             }
         }
 
-        val runtime: ModRuntime = ModRuntime.start(directory, version = "0.0.0+gametest", permissionSource = permissionSource, clock = clock)
+        val runtime: ModRuntime = ModRuntime.start(directory, version = "0.0.0+gametest", permissionSource = permissionSource, clock = clock).also { it.openWorld(worldDirectory(directory)) }
 
         /** Les commandes telles que le jeu les enregistre pour cet état. */
         val dispatcher: CommandDispatcher<CommandSourceStack> = registerCommands()
@@ -157,6 +188,9 @@ object Harness {
         fun writeSettings(json: String) = directory.resolve(GlobalSettings.FILE_NAME).writeText(json)
 
         /** Réécrit le fichier de règles de [table]. */
-        fun writeRules(table: RulesTable, json: String) = write(directory, table, json)
+        fun writeRules(table: RulesTable, json: String) = write(directory.resolve(table.fileName), json)
+
+        /** Réécrit le fichier de données de [family], dans le monde de cet état. */
+        fun writeData(family: String, json: String) = write(worldDirectory(directory).resolve("$family.json"), json)
     }
 }

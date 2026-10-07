@@ -12,16 +12,20 @@ import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.message.MessageType
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import net.minecraft.ChatFormatting
+import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.TextColor
 import net.minecraft.network.chat.contents.TranslatableContents
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-/** La clé et son repli, la console, la couleur du type (cahier des charges, chapitres 2.6.3 et 2.6.5). */
+/** La clé et son repli, la console, la couleur du type, le clic et le survol (cahier des charges, chapitres 2.6.3 et 2.6.5). */
 class MessageComponentsTest {
 
     companion object {
@@ -41,6 +45,28 @@ class MessageComponentsTest {
         val contents = component.contents
         assertTrue(contents is TranslatableContents, "A player receives a translation key, was ${contents::class.simpleName}")
         return contents as TranslatableContents
+    }
+
+    @Test
+    fun `un message qui se clique et se survole porte sa commande et son texte de survol, pour un joueur`() {
+        val message = applied.interactive("/manymanycommands reload", CommonMessages.NATURE_TEXT.with())
+
+        val style = components.forPlayer(message, Language.FRENCH).style
+
+        assertEquals("/manymanycommands reload", assertInstanceOf(ClickEvent.RunCommand::class.java, style.clickEvent).command())
+        val hover = translatable(assertInstanceOf(HoverEvent.ShowText::class.java, style.hoverEvent).value())
+        assertEquals(CommonMessages.NATURE_TEXT.key, hover.key)
+        assertEquals("un texte entre guillemets", hover.fallback)
+        assertNull(components.forPlayer(applied, Language.FRENCH).style.clickEvent, "A plain message has no click event")
+    }
+
+    @Test
+    fun `la console reçoit le texte du survol en clair, à la suite du message`() {
+        val message = applied.interactive("/manymanycommands reload", CommonMessages.NATURE_TEXT.with())
+
+        assertEquals("settings.json : appliqué. : un texte entre guillemets", components.forConsole(message, Language.FRENCH).string)
+        assertEquals("settings.json: applied.: a quoted text", components.forConsole(message, Language.ENGLISH).string)
+        assertEquals("settings.json : appliqué.", components.forConsole(applied.interactive("/manymanycommands reload"), Language.FRENCH).string, "A click alone adds nothing to the console")
     }
 
     @Test

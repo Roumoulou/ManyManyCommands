@@ -4,6 +4,7 @@
 package fr.roumoulou.manymanycommands.rules.message
 
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
+import fr.roumoulou.manymanycommands.rules.homes.HomesMessages
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 /** La clé d'un texte et la situation qui la porte (cahier des charges, chapitre 2.6.5). */
 class MessageFamilyTest {
 
-    private val families = listOf(CommonMessages, ModMessages)
+    private val families = listOf(CommonMessages, ModMessages, HomesMessages)
 
     @Test
     fun `une clé s'écrit manymanycommands, la famille, puis la situation`() {

@@ -4,7 +4,11 @@
 package fr.roumoulou.manymanycommands
 
 import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.common.Position
+import fr.roumoulou.manymanycommands.rules.data.PlayerEntry
+import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
+import fr.roumoulou.manymanycommands.rules.homes.PlayerHomes
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.LanguageSetting
 import fr.roumoulou.manymanycommands.rules.message.Message
@@ -16,6 +20,7 @@ import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -24,14 +29,17 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.UUID
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.exists
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages, le fichier invalide au démarrage et au rechargement (cahier des
- * charges, chapitre 2.7.3), et les réglages qui attendent le redémarrage (`manymanycommands.md` des specs, chapitre 2).
+ * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages et le fichier de données de son monde, le fichier invalide au
+ * démarrage et au rechargement (cahier des charges, chapitre 2.7.3), et les réglages qui attendent le redémarrage (`manymanycommands.md` des
+ * specs, chapitre 2).
  */
 class ModRuntimeTest {
 
@@ -40,9 +48,14 @@ class ModRuntimeTest {
         private const val VERSION = "0.0.0+test"
 
         /** Les six fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
-        private val FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
+        private val SETTINGS_FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
+
+        /** Tous les fichiers : les réglages, puis les données du monde. */
+        private val FILES = SETTINGS_FILES + "world/homes.json"
 
         private val TABLES = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
+
+        private val STEVE: UUID = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5")
 
         @JvmStatic
         @BeforeAll
@@ -54,10 +67,21 @@ class ModRuntimeTest {
 
     private val settingsPath: Path get() = directory.resolve(GlobalSettings.FILE_NAME)
 
-    private fun start(): ModRuntime = ModRuntime.start(directory, VERSION)
+    /** Le dossier du mod dans celui du monde, et son fichier de données des homes. */
+    private val worldDirectory: Path get() = directory.resolve("world").resolve("manymanycommands")
+
+    private val homesPath: Path get() = worldDirectory.resolve("homes.json")
+
+    /** L'état ouvert sur le dossier du test, son monde ouvert comme le fait le démarrage du serveur. */
+    private fun start(): ModRuntime = ModRuntime.start(directory, VERSION).also { it.openWorld(worldDirectory) }
 
     private fun writeRules(family: String, json: String) {
         directory.resolve("rules").createDirectories().resolve("$family.json").writeText(json)
+    }
+
+    private fun writeHomes(json: String) {
+        worldDirectory.createDirectories()
+        homesPath.writeText(json)
     }
 
     /** La ligne de chaque fichier dans la réponse du rechargement, quand tous s'appliquent sauf [refused]. */
@@ -71,8 +95,8 @@ class ModRuntimeTest {
     fun `l'ouverture crée les six fichiers de réglages et applique les réglages livrés`() {
         val runtime = start()
 
-        FILES.forEach { assertTrue(directory.resolve(it).exists(), "$it must be created") }
-        assertEquals(FILES, runtime.settingsFiles.map { it.name })
+        SETTINGS_FILES.forEach { assertTrue(directory.resolve(it).exists(), "$it must be created") }
+        assertEquals(SETTINGS_FILES, runtime.settingsFiles.map { it.name })
         assertEquals(GlobalSettings(), runtime.settings)
         assertEquals(GlobalSettings(), runtime.startupSettings)
         TABLES.forEach { table ->
@@ -97,15 +121,106 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'état donne la version, la source des droits et les six fichiers`() {
+    fun `l'état donne la version, la source des droits et les sept fichiers, les données du monde en dernier`() {
         val expected = listOf(ModMessages.STATUS_VERSION.with(VERSION), ModMessages.STATUS_SOURCE.with("internal")) + FILES.map { ModMessages.STATUS_FILE_VALID.with(it) }
 
         assertEquals(expected, start().status())
     }
 
     @Test
-    fun `le rechargement donne une ligne par fichier, les six appliqués`() {
+    fun `le rechargement donne une ligne par fichier, les sept appliqués`() {
         assertEquals(FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, start().reload())
+    }
+
+    // ── Le monde et ses données ──
+
+    @Test
+    fun `tant qu'aucun monde n'est ouvert, l'état ne donne que les fichiers de réglages`() {
+        val runtime = ModRuntime.start(directory, VERSION)
+
+        assertNull(runtime.worldData)
+        assertEquals(SETTINGS_FILES, runtime.files.map { it.name })
+        assertEquals(SETTINGS_FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, runtime.reload())
+    }
+
+    @Test
+    fun `l'ouverture du monde crée le fichier de données vide, dans le dossier du mod du monde, et le donne sous world`() {
+        val runtime = start()
+
+        assertTrue(homesPath.exists(), "homes.json must be created in the mod's folder of the world")
+        assertEquals(FILES, runtime.files.map { it.name })
+        assertEquals(HomesData(), runtime.worldData?.homes?.content)
+        assertFalse(runtime.hasShippedSettingsInPlace, "A data file is not a settings file: nothing shipped stands in its place")
+    }
+
+    @Test
+    fun `l'ouverture du monde lit le fichier déjà là, et un changement s'y écrit tout de suite`() {
+        writeHomes("""{ "players": { "$STEVE": { "name": "Steve", "homes": { "base": { "dimension": "minecraft:overworld", "x": 1.0, "y": 2.0, "z": 3.0, "yaw": 0.0, "pitch": 0.0 } } } } }""")
+        val runtime = start()
+        val homes = runtime.worldData?.homes ?: error("The world must be open")
+        val base = Position("minecraft:overworld", 1.0, 2.0, 3.0, 0f, 0f)
+        assertEquals(PlayerHomes(mapOf("base" to base)), homes.content?.get(STEVE)?.holdings)
+
+        homes.update(homes.content!!.with(STEVE, PlayerEntry("Steve", PlayerHomes(mapOf("base" to base, "mine" to base)))))
+
+        assertTrue(homesPath.readText().contains("\"mine\""), "The change must be on the disk at once")
+        assertEquals(homes.content, ModRuntime.start(directory, VERSION).also { it.openWorld(worldDirectory) }.worldData?.homes?.content, "Another state reads what was written")
+    }
+
+    @Test
+    fun `des données invalides à l'ouverture rendent la famille indisponible, l'état le montre refusé et les réglages ne bougent pas`() {
+        writeHomes("{\n  \"players\": {\n    \"Steve\": {}\n  }\n}")
+
+        val runtime = start()
+
+        val homes = runtime.worldData?.homes ?: error("The world must be open")
+        assertFalse(homes.isAvailable)
+        assertNull(homes.content)
+        assertEquals(ModMessages.STATUS_FILE_REFUSED.with("world/homes.json"), statusOf(runtime, "world/homes.json"))
+        assertFalse(runtime.hasShippedSettingsInPlace)
+        assertEquals(emptyList<Any>(), runtime.invalidSettingsReport(), "The data file is not announced as invalid settings")
+    }
+
+    @Test
+    fun `corrigées puis rechargées, les données reviennent et la famille est remise en service, parce que le disque fait foi`() {
+        writeHomes("{\n  \"players\": {\n    \"Steve\": {}\n  }\n}")
+        val runtime = start()
+
+        writeHomes("""{ "players": { "$STEVE": { "homes": { "base": { "dimension": "minecraft:overworld", "x": 1.0, "y": 2.0, "z": 3.0, "yaw": 0.0, "pitch": 0.0 } } } } }""")
+        val answer = runtime.reload()
+
+        assertEquals(reloadKeys(), answer.map { it.key })
+        val homes = runtime.worldData?.homes ?: error("The world must be open")
+        assertTrue(homes.isAvailable)
+        assertEquals(listOf("base"), homes.content?.get(STEVE)?.holdings?.homes?.keys?.toList())
+        assertEquals(ModMessages.STATUS_FILE_VALID.with("world/homes.json"), statusOf(runtime, "world/homes.json"))
+    }
+
+    @Test
+    fun `invalides au rechargement, les données en mémoire s'effacent et la famille devient indisponible`() {
+        val runtime = start()
+        val homes = runtime.worldData?.homes ?: error("The world must be open")
+        homes.update(HomesData().with(STEVE, PlayerEntry("Steve", PlayerHomes(mapOf("base" to Position("minecraft:overworld", 1.0, 2.0, 3.0, 0f, 0f))))))
+
+        writeHomes("{\n  \"players\": {\n    \"$STEVE\": {\n      \"default-home\": \"mine\"\n    }\n  }\n}")
+        val answer = runtime.reload()
+
+        assertEquals(reloadKeys(refused = "world/homes.json"), answer.map { it.key })
+        assertEquals(listOf<Any>("players[$STEVE].default-home", 4), answer.first { it.key == ModMessages.RELOAD_FINDING.key }.text.arguments.take(2))
+        assertFalse(homes.isAvailable, "The file on the disk prevails: the homes kept in memory are gone")
+        assertEquals(ModMessages.STATUS_FILE_REFUSED.with("world/homes.json"), statusOf(runtime, "world/homes.json"))
+    }
+
+    @Test
+    fun `le fichier de données supprimé renaît vide au rechargement`() {
+        val runtime = start()
+
+        homesPath.deleteExisting()
+        val answer = runtime.reload()
+
+        assertTrue(homesPath.exists())
+        assertEquals(reloadKeys(), answer.map { it.key })
+        assertEquals(HomesData(), runtime.worldData?.homes?.content)
     }
 
     // ── Le fichier invalide ──

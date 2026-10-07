@@ -120,17 +120,18 @@ class QuotaRulesTest {
     // ── Les plages des joueurs ──
 
     @Test
-    fun `chaque famille tient ses plages, pour chaque joueur`() {
+    fun `en mémoire, chaque famille tient ses plages, pour chaque joueur`() {
         val steve = UUID.fromString("00000000-0000-0000-0000-000000000001")
         val alex = UUID.fromString("00000000-0000-0000-0000-000000000002")
         val usages = QuotaUsages()
+        fun count(player: UUID, now: Long) = usages.record(player, "?", "wild", QuotaRules.afterUse(quota, usages.usage(player, "wild"), now))
 
-        usages.count(steve, "wild", quota, now = first)
-        usages.count(steve, "wild", quota, now = first + 60)
-        usages.count(alex, "wild", quota, now = first + 120)
+        count(steve, now = first)
+        count(steve, now = first + 60)
+        count(alex, now = first + 120)
 
-        assertEquals(window(uses = 2), usages[steve, "wild"])
-        assertEquals(QuotaUsage(QuotaClock.REAL, windowStart = first + 120, uses = 1), usages[alex, "wild"])
-        assertNull(usages[steve, "homes"])
+        assertEquals(window(uses = 2), usages.usage(steve, "wild"))
+        assertEquals(QuotaUsage(QuotaClock.REAL, windowStart = first + 120, uses = 1), usages.usage(alex, "wild"))
+        assertNull(usages.usage(steve, "homes"))
     }
 }

@@ -4,6 +4,7 @@
 package fr.roumoulou.manymanycommands.rules.mod
 
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
+import fr.roumoulou.manymanycommands.rules.file.DataFile
 import fr.roumoulou.manymanycommands.rules.file.FileFinding
 import fr.roumoulou.manymanycommands.rules.file.FileReading
 import fr.roumoulou.manymanycommands.rules.file.SettingsFile
@@ -17,10 +18,24 @@ class ModReportsTest {
 
     private val unknownKey = CommonMessages.FINDING_UNKNOWN_KEY.with()
 
-    /** Un fichier déjà lu, dont la lecture a rendu [reading]. */
+    /** Un fichier de réglages déjà lu, dont la lecture a rendu [reading]. */
     private fun loaded(name: String, reading: FileReading<String>): SettingsFile<String> = SettingsFile(name, shipped = "livré") { reading }.also { it.load() }
 
+    /** Un fichier de données déjà lu, dont la lecture a rendu [reading]. */
+    private fun loadedData(name: String, reading: FileReading<String>): DataFile<String> = DataFile(name, read = { reading }, write = {}).also { it.load() }
+
     private fun refused(vararg findings: FileFinding): FileReading<String> = FileReading.Refused(findings.toList())
+
+    @Test
+    fun `l'état et le rechargement traitent un fichier de données comme un fichier de réglages, sous son nom`() {
+        val files = listOf(loaded("settings.json", FileReading.Applied("lu")), loadedData("world/homes.json", refused(FileFinding("players[Steve]", 3, unknownKey))))
+
+        val status = ModReports.status("0.1.0", PermissionSourceSetting.INTERNAL, files).drop(2)
+        val reload = ModReports.reload(files, awaitingRestart = emptyList())
+
+        assertEquals(listOf(ModMessages.STATUS_FILE_VALID.with("settings.json"), ModMessages.STATUS_FILE_REFUSED.with("world/homes.json")), status)
+        assertEquals(listOf(ModMessages.RELOAD_FILE_APPLIED.with("settings.json"), ModMessages.RELOAD_FILE_REFUSED.with("world/homes.json"), ModMessages.RELOAD_FINDING.with("players[Steve]", 3, unknownKey)), reload)
+    }
 
     @Test
     fun `l'état donne la version, la source des droits, puis une ligne par fichier`() {

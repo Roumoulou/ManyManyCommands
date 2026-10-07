@@ -27,8 +27,8 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 
 /**
- * Le déroulé d'une téléportation joué dans le jeu, pour un joueur simulé (cahier des charges, chapitre 2.5) : aucune commande de famille ne le
- * lance encore, c'est le test qui fait la demande d'une famille. Chaque test ouvre son état du mod, sur une horloge qu'il tient, et fait tiquer
+ * Le déroulé d'une téléportation joué dans le jeu, pour un joueur simulé (cahier des charges, chapitre 2.5) : c'est le test qui fait la demande
+ * d'une famille, pour éprouver le moteur sans une commande. Chaque test ouvre son état du mod, sur une horloge qu'il tient, et fait tiquer
  * lui-même le moteur : le temps n'y passe que quand il le dit.
  */
 class TeleportGameTests {
