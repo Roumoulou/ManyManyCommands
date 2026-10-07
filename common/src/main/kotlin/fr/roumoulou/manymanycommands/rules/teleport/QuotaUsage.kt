@@ -49,15 +49,30 @@ object QuotaRules {
     private fun openWindow(quota: Quota, usage: QuotaUsage?, now: Long): QuotaUsage? = usage?.takeIf { it.clock == quota.clock && now < it.windowStart + quota.periodSeconds }
 }
 
-/** Les plages de quota des joueurs, en mémoire : chaque famille tient les siennes, pour chaque joueur. */
-class QuotaUsages {
+/**
+ * Où se lisent et s'écrivent les plages de quota des joueurs, chaque famille tenant les siennes (cahier des charges, chapitre 2.5.9) : dans le
+ * fichier de données de la famille, qui les conserve au redémarrage du serveur, ou en mémoire.
+ */
+interface QuotaLedger {
+
+    fun usage(player: UUID, family: String): QuotaUsage?
+
+    /**
+     * Garde la plage de [player] dans [family] après un usage.
+     *
+     * @param playerName le nom du joueur du moment, que le fichier de données écrit avec son entrée
+     */
+    fun record(player: UUID, playerName: String, family: String, usage: QuotaUsage)
+}
+
+/** Les plages de quota en mémoire, pour les familles dont aucun fichier de données ne les conserve encore : elles s'effacent au redémarrage. */
+class QuotaUsages : QuotaLedger {
 
     private val usages = HashMap<Pair<UUID, String>, QuotaUsage>()
 
-    operator fun get(player: UUID, family: String): QuotaUsage? = usages[player to family]
+    override fun usage(player: UUID, family: String): QuotaUsage? = usages[player to family]
 
-    /** Compte un usage de [family] pour [player], à son arrivée. */
-    fun count(player: UUID, family: String, quota: Quota, now: Long) {
-        usages[player to family] = QuotaRules.afterUse(quota, this[player, family], now)
+    override fun record(player: UUID, playerName: String, family: String, usage: QuotaUsage) {
+        usages[player to family] = usage
     }
 }

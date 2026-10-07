@@ -130,13 +130,15 @@ class QuotaRule(key: String, shipped: Quota?) : Rule<WrittenQuota?, Quota?>(key,
 
     override fun written(value: Quota?): WrittenQuota? = value?.let { WrittenQuota(it.uses, it.periodSeconds, it.clock.value) }
 
-    /** La clé qui manque se dit au chemin du quota, qui a une ligne dans le fichier : le sien n'en a pas. */
     private fun wholeNumber(path: String, key: String, written: Long?, min: Long): List<FileFinding> = when {
-        written == null -> listOf(FileFinding(path, null, CommonMessages.FINDING_MISSING_KEY.with(key)))
+        written == null -> listOf(missingKey(path, key))
         written < min -> listOf(notAllowed(FindingPath.property(path, key), written, CommonMessages.ALLOWED_AT_LEAST.with(min)))
         else -> emptyList()
     }
 }
+
+/** Le constat d'une clé obligatoire absente, sans sa ligne : au chemin de l'objet qui devrait la porter, qui a une ligne dans le fichier, là où la clé n'en a pas. */
+internal fun missingKey(path: String, key: String): FileFinding = FileFinding(path, null, CommonMessages.FINDING_MISSING_KEY.with(key))
 
 /** Le constat d'une valeur hors des valeurs admises, sans sa ligne. */
 internal fun notAllowed(path: String, value: Any, allowed: Any): FileFinding = FileFinding(path, null, CommonMessages.FINDING_NOT_ALLOWED.with(value, allowed))

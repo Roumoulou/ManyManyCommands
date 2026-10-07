@@ -44,6 +44,6 @@ class ManyManyCommandsCommand(private val runtime: ModRuntime) {
     /** Rend le nombre de fichiers appliqués. Les lignes de succès se journalisent, comme la réponse d'une commande d'opérateur du jeu. */
     private fun reload(context: CommandContext<CommandSourceStack>): Int {
         runtime.reload().forEach { runtime.messenger.reply(context.source, it, logged = it.type == MessageType.SUCCESS) }
-        return runtime.settingsFiles.count { it.isValid }
+        return runtime.files.count { it.isValid }
     }
 }

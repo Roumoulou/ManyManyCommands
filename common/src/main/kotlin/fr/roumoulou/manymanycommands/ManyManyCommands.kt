@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.level.storage.LevelResource
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -20,7 +21,8 @@ import org.slf4j.LoggerFactory
  * Point d'entrée du mod, sur un serveur dédié comme en solo : il branche les événements du jeu sur le [ModRuntime] du serveur.
  *
  * Le jeu construit ses commandes avant son serveur. Le `ModRuntime` s'ouvre donc à l'enregistrement des commandes qui précède un démarrage, et
- * se lâche à l'arrêt : en solo, chaque monde ouvert relit les fichiers.
+ * se lâche à l'arrêt : en solo, chaque monde ouvert relit les fichiers. Le dossier du monde, lui, n'est connu qu'au démarrage du serveur : c'est
+ * là que les fichiers de données s'ouvrent.
  */
 class ManyManyCommands : ModInitializer {
 
@@ -41,7 +43,10 @@ class ManyManyCommands : ModInitializer {
         LOGGER.info("ManyManyCommands {} loaded", version)
 
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ -> ModCommands.register(dispatcher, runtimeForRegistration(version)) }
-        ServerLifecycleEvents.SERVER_STARTING.register { serverRunning = true }
+        ServerLifecycleEvents.SERVER_STARTING.register { server ->
+            serverRunning = true
+            runtime?.openWorld(server.getWorldPath(LevelResource.ROOT).resolve(MOD_ID).normalize())
+        }
         ServerLifecycleEvents.SERVER_STOPPED.register {
             serverRunning = false
             runtime = null

@@ -23,10 +23,17 @@
   "manymanycommands.common.nature.object": "un objet",
   "manymanycommands.common.nature.list": "une liste",
 
+  "manymanycommands.common.name.invalid": "Nom invalide : 1 à 32 caractères, lettres sans accent, chiffres, _ et - seulement.",
+  "manymanycommands.common.source.in_game_only": "Cette commande se lance en jeu.",
+  "manymanycommands.common.console.detail": "%s : %s",
+
   "manymanycommands.common.allowed.at_least": "%s ou plus",
   "manymanycommands.common.allowed.range": "de %s à %s",
+  "manymanycommands.common.allowed.name": "1 à 32 caractères, lettres sans accent, chiffres, _ et -",
   "manymanycommands.common.allowed.lowercase_name": "1 à 32 caractères, lettres minuscules sans accent, chiffres, _ et -",
   "manymanycommands.common.allowed.dimension": "l'identifiant d'une dimension, comme minecraft:the_nether",
+  "manymanycommands.common.allowed.player_id": "l'UUID d'un joueur, comme 069a79f4-44e9-4726-a5be-fca90e38aaf5",
+  "manymanycommands.common.allowed.none": "aucune",
 
   "manymanycommands.common.teleport.pending": "Une téléportation est déjà en attente.",
   "manymanycommands.common.teleport.cooldown": "Encore %s avant de relancer cette commande.",
@@ -53,5 +60,29 @@
   "manymanycommands.mod.reload.restart_required": "%s : prendra effet au redémarrage du serveur.",
   "manymanycommands.mod.reload.restart_required.in_file": "%s, %s : prendra effet au redémarrage du serveur.",
 
-  "manymanycommands.mod.startup.invalid_settings": "Réglages invalides : les réglages livrés s'appliquent. /manymanycommands en donne l'état."
+  "manymanycommands.mod.startup.invalid_settings": "Réglages invalides : les réglages livrés s'appliquent. /manymanycommands en donne l'état.",
+
+  "manymanycommands.homes.created": "Home %s créé : %s, %s %s %s.",
+  "manymanycommands.homes.forbidden_dimension": "Les homes sont interdits dans la dimension %s.",
+  "manymanycommands.homes.limit_reached.one": "Limite de %s home atteinte.",
+  "manymanycommands.homes.limit_reached.many": "Limite de %s homes atteinte.",
+  "manymanycommands.homes.already_exists": "Le home %s existe déjà.",
+  "manymanycommands.homes.absent": "Le home %s n'existe pas.",
+  "manymanycommands.homes.no_default": "Aucun home par défaut : /homes default <name> en désigne un.",
+  "manymanycommands.homes.departure_forbidden": "Les homes ne se rejoignent pas depuis la dimension %s.",
+  "manymanycommands.homes.dimension_missing": "La dimension %s du home %s est introuvable.",
+  "manymanycommands.homes.quota_reached.one": "Quota de %s téléportation vers un home atteint, prochaine possible dans %s.",
+  "manymanycommands.homes.quota_reached.many": "Quota de %s téléportations vers un home atteint, prochaine possible dans %s.",
+  "manymanycommands.homes.arrived": "Arrivée au home %s.",
+  "manymanycommands.homes.deleted": "Home %s supprimé : %s, %s %s %s.",
+  "manymanycommands.homes.list.header": "Homes : %s sur %s",
+  "manymanycommands.homes.list.home": "%s",
+  "manymanycommands.homes.list.default_home": "%s (par défaut)",
+  "manymanycommands.homes.list.empty": "Aucun home.",
+  "manymanycommands.homes.list.position": "%s, %s %s %s",
+  "manymanycommands.homes.renamed": "Home %s renommé en %s.",
+  "manymanycommands.homes.same_name": "Le home %s porte déjà ce nom.",
+  "manymanycommands.homes.moved": "Home %s déplacé : %s, %s %s %s.",
+  "manymanycommands.homes.default_set": "Home par défaut : %s.",
+  "manymanycommands.homes.unavailable": "Les homes sont indisponibles : leur fichier de données est invalide."
 }

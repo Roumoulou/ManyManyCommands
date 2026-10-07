@@ -15,6 +15,7 @@ import fr.roumoulou.manymanycommands.rules.teleport.Cooldowns
 import fr.roumoulou.manymanycommands.rules.teleport.DelayStep
 import fr.roumoulou.manymanycommands.rules.teleport.Dispensations
 import fr.roumoulou.manymanycommands.rules.teleport.ImmobilityDelay
+import fr.roumoulou.manymanycommands.rules.teleport.QuotaLedger
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaRules
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
 import fr.roumoulou.manymanycommands.rules.teleport.TeleportRefusal
@@ -29,14 +30,15 @@ import java.util.UUID
 
 /**
  * Le moteur qui joue le déroulé d'une téléportation pour un joueur (cahier des charges, chapitre 2.5), et l'état qu'il tient en mémoire pour un
- * serveur : les téléportations en attente, les cooldowns, les plages de quota.
+ * serveur : les téléportations en attente et les cooldowns. Les plages de quota, elles, se lisent et s'écrivent là où [quotas] les tient.
  *
  * Il ne refait aucune règle : il lit le jeu, l'heure et les droits, les passe en valeurs aux règles de `rules.teleport`, et fait dans le jeu ce
  * qu'elles décident. Il envoie les messages du tableau du chapitre 2.5.8.
  *
  * @param clock l'horloge de l'état du mod, que tout délai mesure
+ * @param quotas les plages de quota des joueurs : dans le fichier de données de leur famille, ou en mémoire
  */
-class TeleportEngine(private val messenger: Messenger, private val rights: Rights, private val clock: Clock) {
+class TeleportEngine(private val messenger: Messenger, private val rights: Rights, private val clock: Clock, private val quotas: QuotaLedger = QuotaUsages()) {
 
     private companion object {
 
@@ -48,8 +50,6 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
     private val journeys = LinkedHashMap<UUID, Journey>()
 
     private val cooldowns = Cooldowns()
-
-    private val quotaUsages = QuotaUsages()
 
     fun hasPending(player: ServerPlayer): Boolean = player.uuid in journeys
 
@@ -64,7 +64,7 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
         dispensations(source).quota(ruleSet[table.quota])?.let { QuotaCharge(holder, table.family, it) }
 
     /** Les secondes à attendre avant le prochain usage de [charge], et 0 quand il est possible : la famille en fait son refus du quota atteint. */
-    fun quotaWaitSeconds(charge: QuotaCharge?): Long = if (charge == null) 0 else QuotaRules.waitSeconds(charge.quota, quotaUsages[charge.holder.uuid, charge.family], quotaNow(charge))
+    fun quotaWaitSeconds(charge: QuotaCharge?): Long = if (charge == null) 0 else QuotaRules.waitSeconds(charge.quota, quotas.usage(charge.holder.uuid, charge.family), quotaNow(charge))
 
     /**
      * Lance la téléportation de [request] : les refus des étapes 1 à 4, puis le délai d'immobilité, que [tick] fait s'écouler.
@@ -166,7 +166,10 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
             return
         }
         cooldowns.start(player.uuid, request.table.family, now)
-        request.quotaCharge?.let { quotaUsages.count(it.holder.uuid, it.family, it.quota, quotaNow(it)) }
+        request.quotaCharge?.let { charge ->
+            val holder = charge.holder.uuid
+            quotas.record(holder, charge.holder.scoreboardName, charge.family, QuotaRules.afterUse(charge.quota, quotas.usage(holder, charge.family), quotaNow(charge)))
+        }
         request.listener.onArrived(from, to)
     }
 

@@ -4,6 +4,7 @@
 package fr.roumoulou.manymanycommands
 
 import fr.roumoulou.manymanycommands.files.back.BackRulesFile
+import fr.roumoulou.manymanycommands.files.homes.HomesDataFile
 import fr.roumoulou.manymanycommands.files.homes.HomesRulesFile
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.files.settings.GlobalSettingsFile
@@ -15,8 +16,13 @@ import fr.roumoulou.manymanycommands.game.permission.PermissionSource
 import fr.roumoulou.manymanycommands.game.permission.Rights
 import fr.roumoulou.manymanycommands.game.teleport.TeleportEngine
 import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.data.DataFileQuotas
+import fr.roumoulou.manymanycommands.rules.file.DataFile
+import fr.roumoulou.manymanycommands.rules.file.ModFile
 import fr.roumoulou.manymanycommands.rules.file.SettingsFile
+import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
+import fr.roumoulou.manymanycommands.rules.homes.PlayerHomes
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.mod.FileSetting
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
@@ -26,6 +32,9 @@ import fr.roumoulou.manymanycommands.rules.ruleset.FamilyRules
 import fr.roumoulou.manymanycommands.rules.ruleset.RuleValues
 import fr.roumoulou.manymanycommands.rules.ruleset.RulesTable
 import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
+import fr.roumoulou.manymanycommands.rules.teleport.QuotaLedger
+import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsage
+import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
 import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
@@ -33,12 +42,15 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.server.level.ServerPlayer
 import java.nio.file.Path
 import java.time.Clock
+import java.util.UUID
 
 /**
- * L'état du mod pour un serveur : ses fichiers de réglages, ses textes, l'envoi de ses messages, ses droits, son horloge et ses téléportations.
+ * L'état du mod pour un serveur : ses fichiers de réglages, les fichiers de données de son monde, ses textes, l'envoi de ses messages, ses
+ * droits, son horloge et ses téléportations.
  *
  * Il s'ouvre sur le dossier qu'on lui donne et ne lit aucun chemin de lui-même : le point d'entrée lui donne le dossier du serveur, un test le
- * sien. Chaque commande reçoit son `ModRuntime` à l'enregistrement.
+ * sien. Le dossier du monde lui arrive de même, au démarrage du serveur ([openWorld]). Chaque commande reçoit son `ModRuntime` à
+ * l'enregistrement.
  *
  * @property clock l'heure réelle, pour tout ce qui mesure un temps. Une règle ne la lit jamais : elle reçoit l'instant, que le code de la couche
  * `game` prend ici. Un test y met une horloge qu'il tient, parce que le serveur GameTest tique sans cadence.
@@ -73,12 +85,19 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     /** Les fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
     val settingsFiles: List<SettingsFile<*>> = listOf(globalSettingsFile) + rulesFiles.values
 
+    /** Les fichiers de données du monde, `null` tant qu'aucun monde n'est ouvert : le jeu enregistre les commandes avant de connaître son dossier. */
+    var worldData: WorldData? = null
+        private set
+
+    /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent : les réglages, puis les données du monde. */
+    val files: List<ModFile> get() = settingsFiles + worldData?.files.orEmpty()
+
     val messenger = Messenger(TextCatalog.load(), language = { settings.language })
 
     val rights = Rights(permissionSource)
 
-    /** Le déroulé des téléportations : celles en attente, les cooldowns et les plages de quota, que le serveur garde en mémoire. */
-    val teleports = TeleportEngine(messenger, rights, clock)
+    /** Le déroulé des téléportations : celles en attente et les cooldowns, en mémoire, et les plages de quota, conservées dans les fichiers de données du monde. */
+    val teleports = TeleportEngine(messenger, rights, clock, WorldQuotas())
 
     /**
      * Les réglages globaux lus à l'ouverture. Les commandes s'enregistrent sur eux, et ceux qui ne prennent effet qu'au redémarrage du serveur
@@ -99,8 +118,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         settingsFiles.forEach { it.load() }
         startupSettings = settings
         rulesAtStartup = rulesFiles.mapValues { (_, file) -> file.inForce }
-        // Le journal du serveur ne nomme pas ses loggers : chaque ligne dit de quel mod elle vient.
-        invalidSettingsReport().forEach { ManyManyCommands.LOGGER.error("[ManyManyCommands] {}", messenger.forJournal(it)) }
+        invalidSettingsReport().forEach(::logError)
     }
 
     /** Les règles en vigueur de la famille de [table], que le rechargement remplace. */
@@ -112,14 +130,24 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     /** Le jeu de règles de [source] dans la famille de [table] (cahier des charges, chapitre 2.4.3), pris dans les règles en vigueur. */
     fun ruleSet(source: CommandSourceStack, table: RulesTable): RuleValues = table.setFor(rules(table)) { rights.has(source, it) }
 
-    /** La réponse de `/manymanycommands`. */
-    fun status(): List<Message> = ModReports.status(version, startupSettings.permissionSource, settingsFiles)
+    /**
+     * Ouvre les fichiers de données dans [worldDirectory], le dossier du mod dans celui du monde, et les lit : un fichier qui manque est créé
+     * vide, un fichier invalide rend sa famille indisponible et se dit en erreur au journal, avec ses constats.
+     */
+    fun openWorld(worldDirectory: Path) {
+        val data = WorldData(worldDirectory)
+        worldData = data
+        data.files.filter { !it.isValid }.flatMap(ModReports::refusal).forEach(::logError)
+    }
 
-    /** Relit les fichiers, et rend la réponse de `/manymanycommands reload`. */
+    /** La réponse de `/manymanycommands`. */
+    fun status(): List<Message> = ModReports.status(version, startupSettings.permissionSource, files)
+
+    /** Relit tous les fichiers, et rend la réponse de `/manymanycommands reload`. Pour les données, le fichier du disque fait foi. */
     fun reload(): List<Message> {
-        settingsFiles.forEach { it.load() }
+        files.forEach { it.load() }
         val awaitingRestartInRules = rulesFiles.flatMap { (table, file) -> table.awaitingRestart(file.inForce, startupRules(table)).map { FileSetting(file.name, it) } }
-        return ModReports.reload(settingsFiles, settings.awaitingRestart(startupSettings), awaitingRestartInRules)
+        return ModReports.reload(files, settings.awaitingRestart(startupSettings), awaitingRestartInRules)
     }
 
     /** À la connexion d'un joueur : les réglages invalides au démarrage s'annoncent à qui a le nœud `manymanycommands.status`. */
@@ -134,5 +162,44 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     fun invalidSettingsReport(): List<Message> {
         if (!hasShippedSettingsInPlace) return emptyList()
         return settingsFiles.filter { it.isShippedInPlace }.flatMap(ModReports::refusal) + ModMessages.STARTUP_INVALID_SETTINGS.with()
+    }
+
+    /** Le journal du serveur ne nomme pas ses loggers : chaque ligne dit de quel mod elle vient. */
+    private fun logError(message: Message) = ManyManyCommands.LOGGER.error("[ManyManyCommands] {}", messenger.forJournal(message))
+
+    /** Les fichiers de données d'un monde (cahier des charges, chapitre 2.7.1) : chaque famille y tient les siens, lus à l'ouverture. */
+    class WorldData internal constructor(directory: Path) {
+
+        /** `homes.json` : les homes et la plage de quota de chaque joueur. */
+        val homes: DataFile<HomesData> = HomesDataFile.at(directory)
+
+        /** Les fichiers de données, dans l'ordre où l'état et le rechargement les donnent. */
+        val files: List<DataFile<*>> = listOf(homes)
+
+        /** Les plages de quota conservées dans un fichier de données, par famille : celles des familles qui ont le leur. */
+        val quotas: Map<String, DataFileQuotas<*>> = mapOf(HomesRules.family to DataFileQuotas(homes, PlayerHomes()))
+
+        init {
+            files.forEach { it.load() }
+        }
+    }
+
+    /**
+     * Les plages de quota des joueurs (cahier des charges, chapitre 2.5.9) : dans le fichier de données de la famille quand le monde en tient un,
+     * où elles survivent au redémarrage du serveur, et en mémoire sinon.
+     */
+    private inner class WorldQuotas : QuotaLedger {
+
+        private val memory = QuotaUsages()
+
+        override fun usage(player: UUID, family: String): QuotaUsage? {
+            val stored = worldData?.quotas?.get(family) ?: return memory.usage(player, family)
+            return stored.usage(player)
+        }
+
+        override fun record(player: UUID, playerName: String, family: String, usage: QuotaUsage) {
+            val stored = worldData?.quotas?.get(family) ?: return memory.record(player, playerName, family, usage)
+            stored.record(player, playerName, usage)
+        }
     }
 }

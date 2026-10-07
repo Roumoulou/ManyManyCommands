@@ -4,15 +4,15 @@
 package fr.roumoulou.manymanycommands.rules.mod
 
 import fr.roumoulou.manymanycommands.rules.file.FileFinding
-import fr.roumoulou.manymanycommands.rules.file.SettingsFile
+import fr.roumoulou.manymanycommands.rules.file.ModFile
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.settings.PermissionSourceSetting
 
-/** Les réponses de `/manymanycommands` (`manymanycommands.md` des specs, chapitres 1 et 5), bâties sur l'état des fichiers. */
+/** Les réponses de `/manymanycommands` (`manymanycommands.md` des specs, chapitres 1 et 5), bâties sur l'état des fichiers, de réglages et de données. */
 object ModReports {
 
     /** L'état : la version du mod, la source des droits du démarrage, puis chaque fichier, valide ou refusé. */
-    fun status(version: String, permissionSource: PermissionSourceSetting, files: List<SettingsFile<*>>): List<Message> = buildList {
+    fun status(version: String, permissionSource: PermissionSourceSetting, files: List<ModFile>): List<Message> = buildList {
         add(ModMessages.STATUS_VERSION.with(version))
         add(ModMessages.STATUS_SOURCE.with(permissionSource.value))
         files.forEach { add((if (it.isValid) ModMessages.STATUS_FILE_VALID else ModMessages.STATUS_FILE_REFUSED).with(it.name)) }
@@ -25,14 +25,14 @@ object ModReports {
      * @param awaitingRestart les clés des réglages de `settings.json` lus au seul démarrage dont la valeur a changé
      * @param awaitingRestartInRules les mêmes réglages dans les fichiers de règles, chacun avec son fichier : cinq d'entre eux portent `enabled`
      */
-    fun reload(files: List<SettingsFile<*>>, awaitingRestart: List<String>, awaitingRestartInRules: List<FileSetting> = emptyList()): List<Message> = buildList {
+    fun reload(files: List<ModFile>, awaitingRestart: List<String>, awaitingRestartInRules: List<FileSetting> = emptyList()): List<Message> = buildList {
         files.forEach { file -> if (file.isValid) add(ModMessages.RELOAD_FILE_APPLIED.with(file.name)) else addAll(refusal(file)) }
         awaitingRestart.forEach { add(ModMessages.RELOAD_RESTART_REQUIRED.with(it)) }
         awaitingRestartInRules.forEach { add(ModMessages.RELOAD_RESTART_REQUIRED_IN_FILE.with(it.file, it.key)) }
     }
 
     /** Le refus d'un fichier : son nom, puis une ligne par constat. Vide pour un fichier valide. */
-    fun refusal(file: SettingsFile<*>): List<Message> {
+    fun refusal(file: ModFile): List<Message> {
         val refusal = file.refusal ?: return emptyList()
         return listOf(ModMessages.RELOAD_FILE_REFUSED.with(file.name)) + refusal.findings.map(::finding)
     }

@@ -19,6 +19,15 @@ object CommonMessages : MessageFamily("common") {
     val DURATION_SECONDS_MANY = fragment("duration.seconds.many")
     val DURATION_PAIR = fragment("duration.pair")
 
+    // Les noms (chapitre 2.3) : le refus d'un nom invalide.
+    val NAME_INVALID = refusal("name.invalid")
+
+    // La source d'une commande (chapitre 2.8) : le refus de la console pour une commande qui a besoin d'une position.
+    val IN_GAME_ONLY = refusal("source.in_game_only")
+
+    // Ce qu'un joueur lit au survol d'un message, la console le reçoit en clair à la suite du message.
+    val CONSOLE_DETAIL = fragment("console.detail")
+
     // Les constats d'un fichier refusé (chapitre 2.7.4).
     val FINDING_UNKNOWN_KEY = fragment("finding.unknown_key")
     val FINDING_WRONG_NATURE = fragment("finding.wrong_nature")
@@ -38,8 +47,11 @@ object CommonMessages : MessageFamily("common") {
     // Les valeurs admises qui ne s'énumèrent pas, argument de FINDING_NOT_ALLOWED.
     val ALLOWED_AT_LEAST = fragment("allowed.at_least")
     val ALLOWED_RANGE = fragment("allowed.range")
+    val ALLOWED_NAME = fragment("allowed.name")
     val ALLOWED_LOWERCASE_NAME = fragment("allowed.lowercase_name")
     val ALLOWED_DIMENSION = fragment("allowed.dimension")
+    val ALLOWED_PLAYER_ID = fragment("allowed.player_id")
+    val ALLOWED_NONE = fragment("allowed.none")
 
     // Le déroulé d'une téléportation (chapitre 2.5.8) : ses refus, son compte à rebours, ses annulations.
     val TELEPORT_PENDING = refusal("teleport.pending")

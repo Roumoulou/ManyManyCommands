@@ -4,25 +4,41 @@
 package fr.roumoulou.manymanycommands.game.message
 
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
+import fr.roumoulou.manymanycommands.rules.common.CommonMessages
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.message.MessageColor
 import fr.roumoulou.manymanycommands.rules.message.TranslatableText
 import net.minecraft.ChatFormatting
+import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.MutableComponent
+import net.minecraft.network.chat.Style
 
 /** Le composant de texte d'un message, selon qui le reçoit (cahier des charges, chapitres 2.6.3 et 2.6.5). */
 class MessageComponents(private val texts: TextCatalog) {
 
     /**
      * Pour un joueur : la clé de traduction, le texte de repli dans [language] et les arguments. Son client affiche la traduction de la clé s'il
-     * la connaît, par un resourcepack du serveur ou parce qu'il porte le mod, et le repli sinon.
+     * la connaît, par un resourcepack du serveur ou parce qu'il porte le mod, et le repli sinon. Un message qui se clique ou se survole porte sa
+     * commande et son texte de survol dans son style.
      */
-    fun forPlayer(message: Message, language: Language): MutableComponent = translatable(message.text, language).withStyle(formatting(message.type.color))
+    fun forPlayer(message: Message, language: Language): MutableComponent {
+        val component = translatable(message.text, language).withStyle(formatting(message.type.color))
+        val interaction = message.interaction ?: return component
+        return component.withStyle { style: Style ->
+            val clickable = interaction.clickCommand?.let { style.withClickEvent(ClickEvent.RunCommand(it)) } ?: style
+            interaction.hover?.let { clickable.withHoverEvent(HoverEvent.ShowText(translatable(it, language))) } ?: clickable
+        }
+    }
 
-    /** Pour la console : le texte que le mod résout lui-même, dans [language]. */
-    fun forConsole(message: Message, language: Language): MutableComponent = Component.literal(texts.resolve(language, message.text)).withStyle(formatting(message.type.color))
+    /** Pour la console : le texte que le mod résout lui-même, dans [language]. Ce qu'un joueur lirait au survol la suit, en clair. */
+    fun forConsole(message: Message, language: Language): MutableComponent {
+        val hover = message.interaction?.hover
+        val text = if (hover == null) message.text else CommonMessages.CONSOLE_DETAIL.with(message.text, hover)
+        return Component.literal(texts.resolve(language, text)).withStyle(formatting(message.type.color))
+    }
 
     private fun translatable(text: TranslatableText, language: Language): MutableComponent {
         val arguments = text.arguments.map { if (it is TranslatableText) translatable(it, language) else it.toString() }
