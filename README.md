@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et trois familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même et la mort ; la branche `/homes player` et les deux autres familles n'ont pas encore leurs commandes |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; la branche `/homes player` et les demandes de téléportation n'ont pas encore leurs commandes |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.161.0 en 26.3 et 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.1 ou plus récent |
@@ -23,7 +23,7 @@ Les spécifications du mod vivent dans `01-docs\specs\` du classeur, hors du dé
 
 | Commande | Ce qu'elle fait |
 |---|---|
-| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`), valide ou refusé |
+| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`, `world/wild.json`), valide ou refusé |
 | `/manymanycommands reload` | relit les fichiers du mod, réglages et données : une ligne par fichier, appliqué, ou refusé avec ses constats, puis les réglages qui attendent le redémarrage |
 | `/mmc` | alias de `/manymanycommands` et de ses sous-commandes |
 
@@ -50,20 +50,25 @@ niveau, elles n'existent pas pour le joueur, ni à la complétion ni à l'exécu
 | `/warps teleport <name> <targets>` | envoie les joueurs désignés au warp, tout de suite, sans le déroulé et sans égard pour sa clé |
 | `/warp <name> [<targets>]`, `/setwarp <name> [<pos> ...]`, `/delwarp <name>` | les alias de `teleport`, `create` et `delete`, que le réglage `aliases` de `rules/warps.json` désactive ensemble |
 | `/back` | ramène le joueur à l'endroit qu'il a quitté en dernier, par le déroulé commun ; deux `/back` de suite font un aller-retour |
+| `/wild` | téléporte le joueur vers un point tiré au hasard dans une couronne autour du point d'apparition du monde, à la surface, sur un bloc solide, hors de l'eau et de la lave, par le déroulé commun ; dix tirages au plus, puis un refus qui invite à réessayer |
+| `/wild timed` | le tirage commun : le premier joueur ouvre un créneau et tire le point, et ceux qui le lancent pendant le créneau, dans la même dimension, le rejoignent |
+| `/rtp [timed]` | l'alias de `/wild`, que le réglage `aliases` de `rules/wild.json` désactive |
 
-Les commandes des homes et `/back` exigent un joueur, et sont ouvertes à tout joueur par défaut, chacune sous
-son nœud (`manymanycommands.homes.<commande>`, `manymanycommands.back`). Dans `/warps`, `teleport` et `list` le
+Les commandes des homes, `/back`, `/wild` et `/wild timed` exigent un joueur, et sont ouvertes à tout joueur par
+défaut, chacune sous son nœud (`manymanycommands.homes.<commande>`, `manymanycommands.back`, `manymanycommands.wild`,
+`manymanycommands.wild.timed`). Dans `/warps`, `teleport` et `list` le
 sont aussi ; `create`, `delete`, `rename`, `move`, `restrict`, `unrestrict` et l'envoi (`teleport.others`) vont
 aux maîtres du jeu, qui reçoivent aussi tous les nœuds d'accès, et à la console, qui lance tout sauf ce qui a
 besoin d'une position : `create` et `move` sans `<pos>`, `teleport` sans `<targets>`. Une commande qui modifie
 un warp et l'envoi se journalisent, comme une commande d'opérateur. La position de retour s'enregistre quand
 une source du jeu de règles du joueur l'active (`sources` dans `rules/back.json`) : une téléportation vers un
-home ou un warp, l'envoi par un administrateur, `/back` lui-même, et la mort, inactive par défaut. Elle vit en
-mémoire et s'efface au redémarrage du serveur.
+home ou un warp, la téléportation aléatoire, l'envoi par un administrateur, `/back` lui-même, et la mort,
+inactive par défaut. Elle vit en mémoire et s'efface au redémarrage du serveur.
 
 Les données des familles vivent dans `<monde>/manymanycommands/` : `homes.json`, les homes et la plage de
 quota de chaque joueur, `warps.json`, les warps du serveur et la plage de quota de chaque joueur, et
-`back.json`, la plage de quota du retour. Le mod les écrit à chaque changement,
+`back.json` et `wild.json`, la plage de quota du retour et de la téléportation aléatoire. Le mod les écrit
+à chaque changement,
 et une plage de quota survit ainsi au redémarrage du serveur. Un fichier de données invalide rend sa famille
 indisponible, sans être réécrit, jusqu'à sa correction et un `reload`.
 
@@ -97,9 +102,9 @@ le premier dans l'ordre du fichier. `enabled` et `aliases` prennent effet au red
 le reste au rechargement. Les valeurs livrées et les valeurs admises de chaque clé sont dans la fiche de
 sa famille, dans les spécifications.
 
-Les homes, les warps et le retour lisent leurs règles ; les deux autres familles n'ont pas encore leurs
-commandes. Le déroulé d'une téléportation, que `/homes teleport`, `/warps teleport` et `/back` lancent,
-applique celles de sa famille : les
+Les homes, les warps, le retour et la téléportation aléatoire lisent leurs règles ; les demandes de
+téléportation n'ont pas encore leurs commandes. Le déroulé d'une téléportation, que `/homes teleport`,
+`/warps teleport`, `/back` et `/wild` lancent, applique celles de sa famille : les
 refus dans leur ordre, le délai d'immobilité et son compte à rebours dans la barre d'action, l'annulation
 quand le joueur bouge, est blessé, meurt, change de dimension ou se déconnecte, le cooldown par famille, le
 quota, et le refus d'une arrivée dangereuse.
@@ -128,7 +133,7 @@ common/src/main/kotlin/fr/roumoulou/manymanycommands/
 ├── ModRuntime.kt                   l'état du mod pour un serveur, ouvert sur un dossier
 ├── rules/                          les règles des specs : ni le jeu, ni Fabric, ni Storify, ni kotlinx
 ├── files/                          la lecture et l'écriture des fichiers du mod : Storify et kotlinx-serialization
-├── game/                           ce qui nomme un type du jeu : les textes, l'envoi d'un message, les droits, le déroulé, le placement, l'envoi de joueurs
+├── game/                           ce qui nomme un type du jeu : les textes, l'envoi d'un message, les droits, le déroulé, le placement, l'envoi de joueurs, le point sûr de /wild
 └── commands/                       les arbres de commandes
 
 common/src/main/resources/          fabric.mod.json, gabarit que chaque module de version remplit,
@@ -164,9 +169,9 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 309 tests |
-| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 126 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par un joueur simulé et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 90 gametests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 327 tests |
+| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 130 tests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par un joueur simulé et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 97 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
