@@ -51,7 +51,7 @@ class ModRuntimeTest {
         private val SETTINGS_FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
 
         /** Tous les fichiers : les réglages, puis les données du monde. */
-        private val FILES = SETTINGS_FILES + "world/homes.json"
+        private val FILES = SETTINGS_FILES + listOf("world/homes.json", "world/back.json")
 
         private val TABLES = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
 
@@ -121,14 +121,14 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'état donne la version, la source des droits et les sept fichiers, les données du monde en dernier`() {
+    fun `l'état donne la version, la source des droits et les huit fichiers, les données du monde en dernier`() {
         val expected = listOf(ModMessages.STATUS_VERSION.with(VERSION), ModMessages.STATUS_SOURCE.with("internal")) + FILES.map { ModMessages.STATUS_FILE_VALID.with(it) }
 
         assertEquals(expected, start().status())
     }
 
     @Test
-    fun `le rechargement donne une ligne par fichier, les sept appliqués`() {
+    fun `le rechargement donne une ligne par fichier, les huit appliqués`() {
         assertEquals(FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, start().reload())
     }
 
@@ -144,12 +144,14 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'ouverture du monde crée le fichier de données vide, dans le dossier du mod du monde, et le donne sous world`() {
+    fun `l'ouverture du monde crée les fichiers de données vides, dans le dossier du mod du monde, et les donne sous world`() {
         val runtime = start()
 
         assertTrue(homesPath.exists(), "homes.json must be created in the mod's folder of the world")
+        assertTrue(worldDirectory.resolve("back.json").exists(), "back.json must be created in the mod's folder of the world")
         assertEquals(FILES, runtime.files.map { it.name })
         assertEquals(HomesData(), runtime.worldData?.homes?.content)
+        assertEquals(true, runtime.worldData?.back?.isAvailable)
         assertFalse(runtime.hasShippedSettingsInPlace, "A data file is not a settings file: nothing shipped stands in its place")
     }
 

@@ -75,8 +75,8 @@ class ModCommandGameTests {
         helper.assertValueEqual(homes.content ?: throw helper.assertionException("le fichier né vide n'a pas de contenu"), HomesData(), "le fichier né vide ne tient aucun joueur")
         val status = Harness.keysSentTo(null, runtime) { Harness.serverDispatcher(helper).execute("manymanycommands", Harness.console(helper)) }
         val reload = Harness.record(runtime) { Harness.serverDispatcher(helper).execute("manymanycommands reload", Harness.console(helper)) }.map { it.message }
-        helper.assertValueEqual(status.size, SETTINGS_STATUS_LINE + FILES.size, "l'état donne les sept fichiers")
-        helper.assertValueEqual(reload.last(), ModMessages.RELOAD_FILE_APPLIED.with("world/homes.json"), "le rechargement donne les données du monde en dernier, sous world/")
+        helper.assertValueEqual(status.size, SETTINGS_STATUS_LINE + FILES.size, "l'état donne tous les fichiers")
+        helper.assertValueEqual(reload.takeLast(2), listOf(ModMessages.RELOAD_FILE_APPLIED.with("world/homes.json"), ModMessages.RELOAD_FILE_APPLIED.with("world/back.json")), "le rechargement donne les données du monde en dernier, sous world/")
         helper.succeed()
     }
 
@@ -107,7 +107,7 @@ class ModCommandGameTests {
         val runtime = Harness.serverRuntime(helper)
         val dispatcher = Harness.serverDispatcher(helper)
         val player = Harness.player(helper)
-        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json")
+        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json", "world/back.json")
 
         val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }

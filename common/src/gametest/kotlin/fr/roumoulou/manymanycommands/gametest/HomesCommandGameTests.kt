@@ -321,11 +321,11 @@ class HomesCommandGameTests {
         helper.assertValueEqual(run(lab, player, "homes").messages.single().type, MessageType.REFUSAL, "les homes indisponibles sont un refus")
         helper.assertTrue(faulty.contentEquals(file.readBytes()), "le fichier fautif n'est pas réécrit")
         val status = Harness.keysSentTo(null, lab.runtime) { lab.dispatcher.execute("manymanycommands", console) }
-        helper.assertValueEqual(status.last(), ModMessages.STATUS_FILE_REFUSED.key, "l'état montre world/homes.json refusé")
+        helper.assertValueEqual(status[2 + Harness.FILES.indexOf("world/homes.json")], ModMessages.STATUS_FILE_REFUSED.key, "l'état montre world/homes.json refusé")
 
         lab.writeData("homes", """{ "players": {} }""")
         val reload = Harness.record(lab.runtime) { lab.dispatcher.execute("manymanycommands reload", console) }.map { it.message }
-        helper.assertValueEqual(reload.last(), ModMessages.RELOAD_FILE_APPLIED.with("world/homes.json"), "le fichier corrigé s'applique au rechargement")
+        helper.assertValueEqual(reload[Harness.FILES.indexOf("world/homes.json")], ModMessages.RELOAD_FILE_APPLIED.with("world/homes.json"), "le fichier corrigé s'applique au rechargement")
         val created = run(lab, player, "homes create base")
         helper.assertValueEqual(created.messages, listOf(placed(HomesMessages.CREATED, "base", positionOf(player))), "la famille est remise en service")
         helper.assertTrue(player.stringUUID in file.readText(), "le home s'écrit dans le fichier remis en service")
