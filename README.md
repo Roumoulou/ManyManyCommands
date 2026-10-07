@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et la première famille jouable, les homes du joueur : `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; la branche `/homes player` et les quatre autres familles n'ont pas encore leurs commandes |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et deux familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; le retour, `/back` et la position de retour qu'enregistrent les homes, le retour lui-même et la mort ; la branche `/homes player` et les trois autres familles n'ont pas encore leurs commandes |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.161.0 en 26.3 et 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.1 ou plus récent |
@@ -23,7 +23,7 @@ Les spécifications du mod vivent dans `01-docs\specs\` du classeur, hors du dé
 
 | Commande | Ce qu'elle fait |
 |---|---|
-| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages puis les données du monde (`world/homes.json`), valide ou refusé |
+| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages puis les données du monde (`world/homes.json`, `world/back.json`), valide ou refusé |
 | `/manymanycommands reload` | relit les fichiers du mod, réglages et données : une ligne par fichier, appliqué, ou refusé avec ses constats, puis les réglages qui attendent le redémarrage |
 | `/mmc` | alias de `/manymanycommands` et de ses sous-commandes |
 
@@ -40,12 +40,17 @@ niveau, elles n'existent pas pour le joueur, ni à la complétion ni à l'exécu
 | `/homes move <name>` | déplace le home à la position du joueur |
 | `/homes default <name>` | désigne le home par défaut, celui que `teleport` rejoint sans nom |
 | `/home [<name>]`, `/sethome <name>`, `/delhome <name>` | les alias de `teleport`, `create` et `delete`, que le réglage `aliases` de `rules/homes.json` désactive ensemble |
+| `/back` | ramène le joueur à l'endroit qu'il a quitté en dernier, par le déroulé commun ; deux `/back` de suite font un aller-retour |
 
 Ces commandes exigent un joueur, et sont ouvertes à tout joueur par défaut, chacune sous son nœud
-`manymanycommands.homes.<commande>`. Les homes vivent dans `<monde>/manymanycommands/homes.json`, que le
-mod écrit à chaque changement, avec la plage de quota de chaque joueur, qui survit ainsi au redémarrage du
-serveur. Un `homes.json` invalide rend les homes indisponibles, sans être réécrit, jusqu'à sa correction et
-un `reload`.
+(`manymanycommands.homes.<commande>`, `manymanycommands.back`). La position de retour s'enregistre quand une
+source du jeu de règles du joueur l'active (`sources` dans `rules/back.json`) : une téléportation vers un home,
+`/back` lui-même, et la mort, inactive par défaut. Elle vit en mémoire et s'efface au redémarrage du serveur.
+
+Les données des familles vivent dans `<monde>/manymanycommands/` : `homes.json`, les homes et la plage de
+quota de chaque joueur, et `back.json`, la plage de quota du retour. Le mod les écrit à chaque changement,
+et une plage de quota survit ainsi au redémarrage du serveur. Un fichier de données invalide rend sa famille
+indisponible, sans être réécrit, jusqu'à sa correction et un `reload`.
 
 Le mod crée ses fichiers de réglages à son premier lancement, sous `config/manymanycommands/`, recrée
 celui qui manque, et ne réécrit jamais un fichier qui existe. `settings.json` porte les réglages qui valent
@@ -77,16 +82,16 @@ le premier dans l'ordre du fichier. `enabled` et `aliases` prennent effet au red
 le reste au rechargement. Les valeurs livrées et les valeurs admises de chaque clé sont dans la fiche de
 sa famille, dans les spécifications.
 
-Les homes lisent leurs règles ; les quatre autres familles n'ont pas encore leurs commandes. Le déroulé
-d'une téléportation, que `/homes teleport` lance, applique celles de sa famille : les refus dans leur ordre,
-le délai d'immobilité et son compte à rebours dans la barre d'action, l'annulation quand le joueur bouge,
-est blessé, meurt, change de dimension ou se déconnecte, le cooldown par famille, le quota, et le refus
-d'une arrivée dangereuse.
+Les homes et le retour lisent leurs règles ; les trois autres familles n'ont pas encore leurs commandes. Le
+déroulé d'une téléportation, que `/homes teleport` et `/back` lancent, applique celles de sa famille : les
+refus dans leur ordre, le délai d'immobilité et son compte à rebours dans la barre d'action, l'annulation
+quand le joueur bouge, est blessé, meurt, change de dimension ou se déconnecte, le cooldown par famille, le
+quota, et le refus d'une arrivée dangereuse.
 
-Dans les six fichiers de réglages comme dans `homes.json`, le JSON est strict, et une clé inconnue refuse le
-fichier. Un fichier de réglages refusé au démarrage laisse la place à ses réglages livrés, ce que le journal
-dit en erreur ; refusé au rechargement, il laisse ses réglages en vigueur. Chaque fichier se juge seul : un
-fichier refusé n'empêche pas les autres de s'appliquer.
+Dans les six fichiers de réglages comme dans les fichiers de données, le JSON est strict, et une clé inconnue
+refuse le fichier. Un fichier de réglages refusé au démarrage laisse la place à ses réglages livrés, ce que le
+journal dit en erreur ; refusé au rechargement, il laisse ses réglages en vigueur. Chaque fichier se juge
+seul : un fichier refusé n'empêche pas les autres de s'appliquer.
 
 Chaque message part comme une clé de traduction avec son texte de repli, en français ou en anglais selon
 `language` : un client vanilla affiche le repli, un resourcepack du serveur peut redéfinir la clé.
@@ -143,9 +148,9 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 265 tests |
-| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 113 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par un joueur simulé et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 64 gametests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 280 tests |
+| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 117 tests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par un joueur simulé et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 71 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
