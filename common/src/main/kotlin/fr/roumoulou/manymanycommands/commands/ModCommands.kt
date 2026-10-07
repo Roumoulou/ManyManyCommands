@@ -5,6 +5,7 @@ package fr.roumoulou.manymanycommands.commands
 
 import com.mojang.brigadier.CommandDispatcher
 import fr.roumoulou.manymanycommands.ModRuntime
+import fr.roumoulou.manymanycommands.commands.back.BackCommand
 import fr.roumoulou.manymanycommands.commands.homes.HomesCommand
 import fr.roumoulou.manymanycommands.commands.mod.ManyManyCommandsCommand
 import net.minecraft.commands.CommandSourceStack
@@ -16,5 +17,6 @@ object ModCommands {
     fun register(dispatcher: CommandDispatcher<CommandSourceStack>, runtime: ModRuntime) {
         ManyManyCommandsCommand(runtime).register(dispatcher)
         HomesCommand(runtime).register(dispatcher)
+        BackCommand(runtime).register(dispatcher)
     }
 }

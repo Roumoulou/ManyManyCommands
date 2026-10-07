@@ -84,5 +84,13 @@
   "manymanycommands.homes.same_name": "The home %s already has this name.",
   "manymanycommands.homes.moved": "Home %s moved: %s, %s %s %s.",
   "manymanycommands.homes.default_set": "Default home: %s.",
-  "manymanycommands.homes.unavailable": "Homes are unavailable: their data file is invalid."
+  "manymanycommands.homes.unavailable": "Homes are unavailable: their data file is invalid.",
+
+  "manymanycommands.back.no_position": "No return position.",
+  "manymanycommands.back.departure_forbidden": "Back cannot be used from the dimension %s.",
+  "manymanycommands.back.dimension_missing": "The dimension %s of the return position cannot be found.",
+  "manymanycommands.back.quota_reached.one": "Quota of %s return reached, next possible in %s.",
+  "manymanycommands.back.quota_reached.many": "Quota of %s returns reached, next possible in %s.",
+  "manymanycommands.back.arrived": "Back at the previous position.",
+  "manymanycommands.back.unavailable": "Back is unavailable: its data file is invalid."
 }

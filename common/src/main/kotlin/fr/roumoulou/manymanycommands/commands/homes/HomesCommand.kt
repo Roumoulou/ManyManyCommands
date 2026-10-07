@@ -15,6 +15,7 @@ import fr.roumoulou.manymanycommands.game.teleport.Arrival
 import fr.roumoulou.manymanycommands.game.teleport.Location
 import fr.roumoulou.manymanycommands.game.teleport.TeleportListener
 import fr.roumoulou.manymanycommands.game.teleport.TeleportRequest
+import fr.roumoulou.manymanycommands.rules.back.BackSource
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
 import fr.roumoulou.manymanycommands.rules.data.PlayerEntry
 import fr.roumoulou.manymanycommands.rules.homes.HomesChange
@@ -116,7 +117,8 @@ class HomesCommand(private val runtime: ModRuntime) {
 
     /**
      * `/homes teleport [<name>]` (`homes.md` des specs, chapitre 3.2). Les refus propres des homes se jugent avant la demande, parce que le point
-     * d'arrivée en dépend : l'étape 1 de la demande reste vide. Le déroulé commun vient ensuite, et l'arrivée se dit par la famille.
+     * d'arrivée en dépend : l'étape 1 de la demande reste vide. Le déroulé commun vient ensuite ; à l'arrivée, l'endroit quitté devient la position
+     * de retour, selon la source `homes` du joueur, et la famille dit l'arrivée.
      *
      * @return 1 quand la téléportation est lancée ou faite, 0 pour un refus, de la famille ou du déroulé
      */
@@ -134,7 +136,10 @@ class HomesCommand(private val runtime: ModRuntime) {
         val destination = Location.of(server, target.position) ?: error("The dimension of the home '${target.name}' was checked")
         val arrived = object : TeleportListener {
 
-            override fun onArrived(from: Location, to: Location) = runtime.messenger.tell(player, HomesMessages.ARRIVED.with(target.name))
+            override fun onArrived(from: Location, to: Location) {
+                runtime.recordReturn(player, BackSource.HOMES, from)
+                runtime.messenger.tell(player, HomesMessages.ARRIVED.with(target.name))
+            }
         }
         val request = TeleportRequest(player, source, HomesRules, ruleSet, Arrival.At(destination), quotaCharge = charge, listener = arrived)
         return if (runtime.teleports.launch(request) == null) Command.SINGLE_SUCCESS else 0

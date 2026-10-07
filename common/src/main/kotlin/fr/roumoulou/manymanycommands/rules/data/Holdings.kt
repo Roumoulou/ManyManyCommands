@@ -12,3 +12,9 @@ interface Holdings {
     /** Rien n'est tenu : avec un nom seul, l'entrée du joueur ne s'écrit pas. */
     val isEmpty: Boolean
 }
+
+/** Ce que tient une famille dont le fichier de données ne porte que les plages de quota : `back.json`, `wild.json`. */
+object NoHoldings : Holdings {
+
+    override val isEmpty: Boolean get() = true
+}

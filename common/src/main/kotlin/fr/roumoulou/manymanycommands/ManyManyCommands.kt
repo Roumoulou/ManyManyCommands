@@ -4,6 +4,8 @@
 package fr.roumoulou.manymanycommands
 
 import fr.roumoulou.manymanycommands.commands.ModCommands
+import fr.roumoulou.manymanycommands.game.teleport.Location
+import fr.roumoulou.manymanycommands.rules.back.BackSource
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
@@ -57,11 +59,18 @@ class ManyManyCommands : ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register { runtime?.teleports?.tick() }
         // Un coup paré par un bouclier ne blesse pas. Un coup mortel n'a pas d'après : la mort a le sien.
         ServerLivingEntityEvents.AFTER_DAMAGE.register { entity, _, baseDamageTaken, _, blocked -> if (baseDamageTaken > 0f && !blocked) onPlayerHurt(entity) }
-        ServerLivingEntityEvents.AFTER_DEATH.register { entity, _ -> onPlayerHurt(entity) }
+        ServerLivingEntityEvents.AFTER_DEATH.register { entity, _ -> if (entity is ServerPlayer) onPlayerDied(entity) }
     }
 
     private fun onPlayerHurt(entity: LivingEntity) {
         if (entity is ServerPlayer) runtime?.teleports?.onDamaged(entity)
+    }
+
+    /** La mort annule la téléportation en attente, et l'endroit de la mort devient la position de retour, si la source `death` du joueur l'enregistre. */
+    private fun onPlayerDied(player: ServerPlayer) {
+        val runtime = runtime ?: return
+        runtime.teleports.onDamaged(player)
+        runtime.recordReturn(player, BackSource.DEATH, Location.of(player))
     }
 
     /**

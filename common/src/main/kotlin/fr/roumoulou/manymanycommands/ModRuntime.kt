@@ -3,6 +3,7 @@
 
 package fr.roumoulou.manymanycommands
 
+import fr.roumoulou.manymanycommands.files.back.BackDataFile
 import fr.roumoulou.manymanycommands.files.back.BackRulesFile
 import fr.roumoulou.manymanycommands.files.homes.HomesDataFile
 import fr.roumoulou.manymanycommands.files.homes.HomesRulesFile
@@ -14,9 +15,15 @@ import fr.roumoulou.manymanycommands.files.wild.WildRulesFile
 import fr.roumoulou.manymanycommands.game.message.Messenger
 import fr.roumoulou.manymanycommands.game.permission.PermissionSource
 import fr.roumoulou.manymanycommands.game.permission.Rights
+import fr.roumoulou.manymanycommands.game.teleport.Location
 import fr.roumoulou.manymanycommands.game.teleport.TeleportEngine
+import fr.roumoulou.manymanycommands.rules.back.BackData
 import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.back.BackSource
+import fr.roumoulou.manymanycommands.rules.back.ReturnPositions
+import fr.roumoulou.manymanycommands.rules.back.ReturnRules
 import fr.roumoulou.manymanycommands.rules.data.DataFileQuotas
+import fr.roumoulou.manymanycommands.rules.data.NoHoldings
 import fr.roumoulou.manymanycommands.rules.file.DataFile
 import fr.roumoulou.manymanycommands.rules.file.ModFile
 import fr.roumoulou.manymanycommands.rules.file.SettingsFile
@@ -99,6 +106,9 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     /** Le déroulé des téléportations : celles en attente et les cooldowns, en mémoire, et les plages de quota, conservées dans les fichiers de données du monde. */
     val teleports = TeleportEngine(messenger, rights, clock, WorldQuotas())
 
+    /** Les positions de retour (`back.md` des specs, chapitre 2), en mémoire : elles s'effacent avec l'état, au redémarrage du serveur. */
+    val returns = ReturnPositions()
+
     /**
      * Les réglages globaux lus à l'ouverture. Les commandes s'enregistrent sur eux, et ceux qui ne prennent effet qu'au redémarrage du serveur
      * gardent leur valeur d'ici.
@@ -140,6 +150,14 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         data.files.filter { !it.isValid }.flatMap(ModReports::refusal).forEach(::logError)
     }
 
+    /**
+     * L'endroit [from] que [player] vient de quitter devient sa position de retour, si [source] l'enregistre dans son jeu de règles du retour
+     * (`back.md` des specs, chapitre 2). Le jeu est celui du joueur lui-même, et non celui de la source d'une commande.
+     */
+    fun recordReturn(player: ServerPlayer, source: BackSource, from: Location) {
+        if (ReturnRules.records(ruleSet(player.createCommandSourceStack(), BackRules), source)) returns.record(player.uuid, from.toPosition())
+    }
+
     /** La réponse de `/manymanycommands`. */
     fun status(): List<Message> = ModReports.status(version, startupSettings.permissionSource, files)
 
@@ -173,11 +191,14 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         /** `homes.json` : les homes et la plage de quota de chaque joueur. */
         val homes: DataFile<HomesData> = HomesDataFile.at(directory)
 
+        /** `back.json` : la plage de quota de chaque joueur, et rien d'autre. */
+        val back: DataFile<BackData> = BackDataFile.at(directory)
+
         /** Les fichiers de données, dans l'ordre où l'état et le rechargement les donnent. */
-        val files: List<DataFile<*>> = listOf(homes)
+        val files: List<DataFile<*>> = listOf(homes, back)
 
         /** Les plages de quota conservées dans un fichier de données, par famille : celles des familles qui ont le leur. */
-        val quotas: Map<String, DataFileQuotas<*>> = mapOf(HomesRules.family to DataFileQuotas(homes, PlayerHomes()))
+        val quotas: Map<String, DataFileQuotas<*>> = mapOf(HomesRules.family to DataFileQuotas(homes, PlayerHomes()), BackRules.family to DataFileQuotas(back, NoHoldings))
 
         init {
             files.forEach { it.load() }

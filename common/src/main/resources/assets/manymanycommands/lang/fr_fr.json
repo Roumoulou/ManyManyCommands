@@ -84,5 +84,13 @@
   "manymanycommands.homes.same_name": "Le home %s porte déjà ce nom.",
   "manymanycommands.homes.moved": "Home %s déplacé : %s, %s %s %s.",
   "manymanycommands.homes.default_set": "Home par défaut : %s.",
-  "manymanycommands.homes.unavailable": "Les homes sont indisponibles : leur fichier de données est invalide."
+  "manymanycommands.homes.unavailable": "Les homes sont indisponibles : leur fichier de données est invalide.",
+
+  "manymanycommands.back.no_position": "Aucune position de retour.",
+  "manymanycommands.back.departure_forbidden": "Le retour ne se lance pas depuis la dimension %s.",
+  "manymanycommands.back.dimension_missing": "La dimension %s de la position de retour est introuvable.",
+  "manymanycommands.back.quota_reached.one": "Quota de %s retour atteint, prochain possible dans %s.",
+  "manymanycommands.back.quota_reached.many": "Quota de %s retours atteint, prochain possible dans %s.",
+  "manymanycommands.back.arrived": "Retour à la position précédente.",
+  "manymanycommands.back.unavailable": "Le retour est indisponible : son fichier de données est invalide."
 }

@@ -4,7 +4,6 @@
 package fr.roumoulou.manymanycommands.rules.homes
 
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
-import fr.roumoulou.manymanycommands.rules.common.DurationWording
 import fr.roumoulou.manymanycommands.rules.common.NameRules
 import fr.roumoulou.manymanycommands.rules.common.Position
 import fr.roumoulou.manymanycommands.rules.data.Holdings
@@ -12,7 +11,8 @@ import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.message.Situation
 import fr.roumoulou.manymanycommands.rules.ruleset.Quota
 import fr.roumoulou.manymanycommands.rules.ruleset.RuleValues
-import fr.roumoulou.manymanycommands.rules.teleport.TeleportSteps
+import fr.roumoulou.manymanycommands.rules.teleport.DestinationRefusals
+import fr.roumoulou.manymanycommands.rules.teleport.DestinationTexts
 
 /**
  * Les homes d'un joueur (`homes.md` des specs, chapitres 1 et 3) : chacun sous son nom, et le home désigné par défaut.
@@ -68,12 +68,8 @@ data class PlayerHomes(val homes: Map<String, Position> = emptyMap(), val design
     fun teleport(name: String?, departure: String, ruleSet: RuleValues, isDimensionKnown: (String) -> Boolean, quota: Quota?, quotaWaitSeconds: () -> Long): HomesTeleport {
         val target = name ?: defaultHome ?: return HomesTeleport.Refused(HomesMessages.NO_DEFAULT.with())
         val position = homes[target] ?: return HomesTeleport.Refused(HomesMessages.ABSENT.with(target))
-        if (TeleportSteps.isDepartureForbidden(HomesRules, ruleSet, departure)) return HomesTeleport.Refused(HomesMessages.DEPARTURE_FORBIDDEN.with(departure))
-        if (!isDimensionKnown(position.dimension)) return HomesTeleport.Refused(HomesMessages.DIMENSION_MISSING.with(position.dimension, target))
-        if (quota != null) {
-            val wait = quotaWaitSeconds()
-            if (wait > 0) return HomesTeleport.Refused(HomesMessages.quotaReached(quota.uses, DurationWording.text(wait)))
-        }
+        val texts = DestinationTexts({ HomesMessages.DEPARTURE_FORBIDDEN.with(it) }, { HomesMessages.DIMENSION_MISSING.with(it, target) }, HomesMessages::quotaReached)
+        DestinationRefusals.first(HomesRules, ruleSet, departure, position.dimension, isDimensionKnown, quota, quotaWaitSeconds, texts)?.let { return HomesTeleport.Refused(it) }
         return HomesTeleport.Target(target, position)
     }
 
