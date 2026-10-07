@@ -78,6 +78,9 @@ interface TeleportListener {
         val NONE = object : TeleportListener {}
     }
 
+    /** Les étapes 1 à 4 sont passées : la téléportation vers [destination] est lancée, et son délai commence, ou le joueur arrive tout de suite. */
+    fun onLaunched(destination: Location) {}
+
     /** Le joueur est arrivé : il a quitté [from] pour [to]. */
     fun onArrived(from: Location, to: Location) {}
 

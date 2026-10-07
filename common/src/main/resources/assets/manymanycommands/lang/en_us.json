@@ -118,5 +118,15 @@
   "manymanycommands.back.quota_reached.one": "Quota of %s return reached, next possible in %s.",
   "manymanycommands.back.quota_reached.many": "Quota of %s returns reached, next possible in %s.",
   "manymanycommands.back.arrived": "Back at the previous position.",
-  "manymanycommands.back.unavailable": "Back is unavailable: its data file is invalid."
+  "manymanycommands.back.unavailable": "Back is unavailable: its data file is invalid.",
+
+  "manymanycommands.wild.arrived": "Arrived at %s %s %s.",
+  "manymanycommands.wild.timed.opened": "Shared point open for %s.",
+  "manymanycommands.wild.timed.joined": "Shared point joined, still open for %s.",
+  "manymanycommands.wild.departure_forbidden": "Random teleport cannot be launched from the dimension %s.",
+  "manymanycommands.wild.quota_reached.one": "Quota of %s random teleport reached, next possible in %s.",
+  "manymanycommands.wild.quota_reached.many": "Quota of %s random teleports reached, next possible in %s.",
+  "manymanycommands.wild.no_safe_point": "No safe point found: try again.",
+  "manymanycommands.wild.border_too_narrow": "No point to draw: the world border excludes the whole zone.",
+  "manymanycommands.wild.unavailable": "Random teleport is unavailable: its data file is invalid."
 }

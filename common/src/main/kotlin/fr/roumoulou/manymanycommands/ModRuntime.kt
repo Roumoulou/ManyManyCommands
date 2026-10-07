@@ -12,6 +12,7 @@ import fr.roumoulou.manymanycommands.files.settings.GlobalSettingsFile
 import fr.roumoulou.manymanycommands.files.tpa.TpaRulesFile
 import fr.roumoulou.manymanycommands.files.warps.WarpsDataFile
 import fr.roumoulou.manymanycommands.files.warps.WarpsRulesFile
+import fr.roumoulou.manymanycommands.files.wild.WildDataFile
 import fr.roumoulou.manymanycommands.files.wild.WildRulesFile
 import fr.roumoulou.manymanycommands.game.message.Messenger
 import fr.roumoulou.manymanycommands.game.permission.PermissionSource
@@ -46,6 +47,8 @@ import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
 import fr.roumoulou.manymanycommands.rules.warps.WarpsData
 import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
+import fr.roumoulou.manymanycommands.rules.wild.TimedWindows
+import fr.roumoulou.manymanycommands.rules.wild.WildData
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.server.level.ServerPlayer
@@ -110,6 +113,9 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     /** Les positions de retour (`back.md` des specs, chapitre 2), en mémoire : elles s'effacent avec l'état, au redémarrage du serveur. */
     val returns = ReturnPositions()
+
+    /** Les créneaux du tirage commun de `/wild timed` (`wild.md` des specs, chapitre 4), un par dimension, en mémoire : ils s'effacent de même. */
+    val wildWindows = TimedWindows()
 
     /**
      * Les réglages globaux lus à l'ouverture. Les commandes s'enregistrent sur eux, et ceux qui ne prennent effet qu'au redémarrage du serveur
@@ -199,14 +205,18 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         /** `back.json` : la plage de quota de chaque joueur, et rien d'autre. */
         val back: DataFile<BackData> = BackDataFile.at(directory)
 
+        /** `wild.json` : la plage de quota de chaque joueur, et rien d'autre. */
+        val wild: DataFile<WildData> = WildDataFile.at(directory)
+
         /** Les fichiers de données, dans l'ordre où l'état et le rechargement les donnent, celui du cahier des charges. */
-        val files: List<DataFile<*>> = listOf(homes, warps, back)
+        val files: List<DataFile<*>> = listOf(homes, warps, back, wild)
 
         /** Les plages de quota conservées dans un fichier de données, par famille : celles des familles qui ont le leur. */
         val quotas: Map<String, DataFileQuotas<*>> = mapOf(
             HomesRules.family to DataFileQuotas.ofFamily(homes, PlayerHomes()),
             WarpsRules.family to DataFileQuotas(warps, { data, player -> data.players[player]?.quota }, { data, player, name, usage -> data.copy(players = data.players.withQuota(player, name, usage, NoHoldings)) }),
             BackRules.family to DataFileQuotas.ofFamily(back, NoHoldings),
+            WildRules.family to DataFileQuotas.ofFamily(wild, NoHoldings),
         )
 
         init {

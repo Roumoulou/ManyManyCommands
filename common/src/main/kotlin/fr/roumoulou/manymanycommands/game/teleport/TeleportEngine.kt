@@ -88,6 +88,7 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
         val destination = reached ?: error("A teleport that nothing refuses has a destination")
         val journey = Journey(request, Location.of(player), destination, ImmobilityDelay(now, dispensations.delaySeconds(request.ruleSet[request.table.delay])))
         journeys[player.uuid] = journey
+        request.listener.onLaunched(destination)
         advance(journey, now)
         return null
     }

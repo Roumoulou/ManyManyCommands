@@ -118,5 +118,15 @@
   "manymanycommands.back.quota_reached.one": "Quota de %s retour atteint, prochain possible dans %s.",
   "manymanycommands.back.quota_reached.many": "Quota de %s retours atteint, prochain possible dans %s.",
   "manymanycommands.back.arrived": "Retour à la position précédente.",
-  "manymanycommands.back.unavailable": "Le retour est indisponible : son fichier de données est invalide."
+  "manymanycommands.back.unavailable": "Le retour est indisponible : son fichier de données est invalide.",
+
+  "manymanycommands.wild.arrived": "Arrivée en %s %s %s.",
+  "manymanycommands.wild.timed.opened": "Point commun ouvert pour %s.",
+  "manymanycommands.wild.timed.joined": "Point commun rejoint, encore ouvert %s.",
+  "manymanycommands.wild.departure_forbidden": "La téléportation aléatoire ne se lance pas depuis la dimension %s.",
+  "manymanycommands.wild.quota_reached.one": "Quota de %s téléportation aléatoire atteint, prochaine possible dans %s.",
+  "manymanycommands.wild.quota_reached.many": "Quota de %s téléportations aléatoires atteint, prochaine possible dans %s.",
+  "manymanycommands.wild.no_safe_point": "Aucun point sûr trouvé : réessayez.",
+  "manymanycommands.wild.border_too_narrow": "Aucun point à tirer : la bordure du monde exclut toute la zone.",
+  "manymanycommands.wild.unavailable": "La téléportation aléatoire est indisponible : son fichier de données est invalide."
 }
