@@ -3,6 +3,7 @@
 
 package fr.roumoulou.manymanycommands.gametest
 
+import com.mojang.authlib.GameProfile
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import fr.roumoulou.manymanycommands.ManyManyCommands
@@ -18,15 +19,21 @@ import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
 import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
+import io.netty.channel.embedded.EmbeddedChannel
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.commands.CommandSource
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.gametest.framework.GameTestHelper
+import net.minecraft.network.Connection
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.PacketFlow
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.network.CommonListenerCookie
 import net.minecraft.server.permissions.LevelBasedPermissionSet
+import net.minecraft.world.level.GameType
 import java.nio.file.Path
 import java.time.Clock
+import java.util.UUID
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
@@ -63,6 +70,24 @@ object Harness {
 
     /** Un joueur simulé, connecté au serveur : chaque test a le sien. Il n'est pas opérateur. */
     fun player(helper: GameTestHelper): ServerPlayer = helper.makeMockServerPlayerInLevel()
+
+    /**
+     * Un joueur simulé nommé [name], connecté au serveur, fabriqué comme le fait le jeu (`makeMockServerPlayerInLevel`), le nom en plus : une
+     * commande qui résout `<player>` par son nom le trouve. Les joueurs simulés du jeu portent tous le même nom. Le nom est propre au test,
+     * parce que les joueurs d'un run partagent le serveur. Comme celui du jeu, il se dit en mode créatif.
+     */
+    fun player(helper: GameTestHelper, name: String): ServerPlayer {
+        val server = helper.level.server
+        val cookie = CommonListenerCookie.createInitial(GameProfile(UUID.randomUUID(), name), false)
+        val player = object : ServerPlayer(server, helper.level, cookie.gameProfile(), cookie.clientInformation()) {
+
+            override fun gameMode(): GameType = GameType.CREATIVE
+        }
+        val connection = Connection(PacketFlow.SERVERBOUND)
+        EmbeddedChannel(connection)
+        server.playerList.placeNewPlayer(connection, player, cookie)
+        return player
+    }
 
     /** La source des commandes de [player] s'il avait le niveau des maîtres du jeu, sans l'inscrire aux opérateurs du serveur. */
     fun asGameMaster(player: ServerPlayer): CommandSourceStack = player.createCommandSourceStack().withPermission(LevelBasedPermissionSet.GAMEMASTER)

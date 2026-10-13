@@ -7,6 +7,7 @@ import fr.roumoulou.manymanycommands.GameBootstrap
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
 import fr.roumoulou.manymanycommands.rules.common.DurationWording
+import fr.roumoulou.manymanycommands.rules.message.Choice
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.message.MessageType
@@ -67,6 +68,28 @@ class MessageComponentsTest {
         assertEquals("settings.json : appliqué. : un texte entre guillemets", components.forConsole(message, Language.FRENCH).string)
         assertEquals("settings.json: applied.: a quoted text", components.forConsole(message, Language.ENGLISH).string)
         assertEquals("settings.json : appliqué.", components.forConsole(applied.interactive("/manymanycommands reload"), Language.FRENCH).string, "A click alone adds nothing to the console")
+    }
+
+    @Test
+    fun `les mots cliquables suivent le texte du message, chacun avec sa commande, pour un joueur`() {
+        val message = applied.withChoices(Choice(CommonMessages.NATURE_TEXT.with(), "/tpaaccept Steve"), Choice(CommonMessages.NATURE_LIST.with(), "/tpadeny Steve"))
+
+        val component = components.forPlayer(message, Language.FRENCH)
+
+        val words = component.siblings.filter { it.style.clickEvent != null }
+        assertEquals(listOf("/tpaaccept Steve", "/tpadeny Steve"), words.map { assertInstanceOf(ClickEvent.RunCommand::class.java, it.style.clickEvent).command() })
+        assertEquals(listOf(CommonMessages.NATURE_TEXT.key, CommonMessages.NATURE_LIST.key), words.map { translatable(it).key })
+        assertEquals(listOf("un texte entre guillemets", "une liste"), words.map { translatable(it).fallback })
+        assertNull(component.style.clickEvent, "The text itself is not clickable")
+        assertEquals(ModMessages.RELOAD_FILE_APPLIED.key, translatable(component).key)
+    }
+
+    @Test
+    fun `la console reçoit chaque mot cliquable en clair, avec sa commande, à la suite du message`() {
+        val message = applied.withChoices(Choice(CommonMessages.NATURE_TEXT.with(), "/tpaaccept Steve"), Choice(CommonMessages.NATURE_LIST.with(), "/tpadeny Steve"))
+
+        assertEquals("settings.json : appliqué. un texte entre guillemets (/tpaaccept Steve) une liste (/tpadeny Steve)", components.forConsole(message, Language.FRENCH).string)
+        assertEquals("settings.json: applied. a quoted text (/tpaaccept Steve) a list (/tpadeny Steve)", components.forConsole(message, Language.ENGLISH).string)
     }
 
     @Test
