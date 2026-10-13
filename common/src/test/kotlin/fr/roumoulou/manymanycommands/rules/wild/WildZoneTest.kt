@@ -26,12 +26,12 @@ class WildZoneTest {
 
     @Test
     fun `la couronne garde les colonnes dont le plus grand écart au centre va de la distance minimale à la maximale`() {
-        assertTrue(Column(14, -20) in zone, "4 blocs à l'est")
-        assertTrue(Column(10, -24) in zone, "4 blocs au sud")
-        assertTrue(Column(1, -11) in zone, "9 blocs à l'ouest et au nord, le coin")
-        assertFalse(Column(13, -17) in zone, "3 blocs : trop près")
-        assertFalse(Column(20, -20) in zone, "10 blocs : trop loin")
-        assertFalse(Column(10, -20) in zone, "le centre")
+        assertTrue(Column(14, -20) in zone, "4 blocks east")
+        assertTrue(Column(10, -24) in zone, "4 blocks south")
+        assertTrue(Column(1, -11) in zone, "9 blocks west and north, the corner")
+        assertFalse(Column(13, -17) in zone, "3 blocks: too close")
+        assertFalse(Column(20, -20) in zone, "10 blocks: too far")
+        assertFalse(Column(10, -20) in zone, "the center")
     }
 
     @Test

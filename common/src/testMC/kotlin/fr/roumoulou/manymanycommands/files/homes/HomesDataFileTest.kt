@@ -10,6 +10,7 @@ import fr.roumoulou.manymanycommands.rules.file.FileFinding
 import fr.roumoulou.manymanycommands.rules.file.FileReading
 import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.PlayerHomes
+import fr.roumoulou.manymanycommands.rules.message.Fragment
 import fr.roumoulou.manymanycommands.rules.ruleset.QuotaClock
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsage
 import kotlinx.serialization.json.Json
@@ -95,7 +96,7 @@ class HomesDataFileTest {
 
     private fun jsonObjectOf(json: String): JsonObject = Json.parseToJsonElement(json).jsonObject
 
-    private fun wrongNature(nature: fr.roumoulou.manymanycommands.rules.message.Fragment) = CommonMessages.FINDING_WRONG_NATURE.with(nature.with())
+    private fun wrongNature(nature: Fragment) = CommonMessages.FINDING_WRONG_NATURE.with(nature.with())
 
     // ── La création ──
 

@@ -69,7 +69,8 @@ class PlayerHomesTest {
 
         assertEquals(HomesMessages.LIMIT_REACHED_MANY.with(0L), refused(PlayerHomes().create("base", overworld, rules(maxHomes = 0))))
         assertEquals(HomesMessages.LIMIT_REACHED_ONE.with(1L), refused(homes.create("ferme", overworld, rules(maxHomes = 1))))
-        assertEquals(overworld, applied(homes.delete("base")).homes["base"].let { homes["base"] }, "Nothing is deleted on its own")
+        applied(homes.delete("base"))
+        assertEquals(overworld, homes["base"], "Nothing is deleted on its own: delete gives new homes and leaves the original")
     }
 
     @Test

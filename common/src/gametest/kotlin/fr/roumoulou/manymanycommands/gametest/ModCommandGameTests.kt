@@ -31,6 +31,7 @@ import kotlin.io.path.exists
 class ModCommandGameTests {
 
     private companion object {
+
         /** Tous les fichiers du mod : les six fichiers de réglages, puis les données du monde. */
         val FILES = Harness.FILES
         val STATUS_KEYS = listOf(ModMessages.STATUS_VERSION.key, ModMessages.STATUS_SOURCE.key) + FILES.map { ModMessages.STATUS_FILE_VALID.key }

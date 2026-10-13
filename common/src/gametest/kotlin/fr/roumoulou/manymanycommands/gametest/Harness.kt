@@ -140,6 +140,8 @@ object Harness {
         companion object {
 
             /**
+             * Ouvre un état neuf sur le dossier [name], vidé d'abord, avec les fichiers que le test y pose avant l'ouverture.
+             *
              * @param name le nom du dossier, propre au test
              * @param settings le contenu de `settings.json` avant l'ouverture, `null` pour laisser le mod le créer
              * @param rules le contenu des fichiers de règles avant l'ouverture, par leur table : le mod crée ceux qui manquent
