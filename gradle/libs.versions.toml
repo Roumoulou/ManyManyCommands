@@ -9,7 +9,7 @@ java = "25" # Version Java cible (utilisée pour la compilation ET dans fabric.m
 # les sources du projet voisin et ignore le numéro. C'est la version publiée sur Repsy.
 # Les modules de version déclarent leur serveur GameTest à Outfitter (`gameTests { }`),
 # arrivé en 0.3 : une version antérieure ne compilerait plus leur build.
-outfitter = "0.3.2-SNAPSHOT"
+outfitter = "0.4.0-SNAPSHOT"
 
 # ── Publication ───────────────────────────────────────────────────────────────
 # mod-publish-plugin, de modmuss50, le mainteneur de Loom : Modrinth et CurseForge d'une
@@ -24,7 +24,7 @@ mod-publish = "2.2.1"
 # --refresh-dependencies force la reprise. tomlkt et json5 sont ses deux dépendances que
 # fabric-language-kotlin ne fournit pas : le jar du mod les embarque avec elle (jar-in-jar,
 # section 2 du plugin de version), aux versions de son catalogue.
-storify = "0.4.0-SNAPSHOT"
+storify = "0.6.0-SNAPSHOT"
 tomlkt = "0.6.1"
 json5 = "0.8.0"
 
