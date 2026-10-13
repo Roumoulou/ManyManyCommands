@@ -75,7 +75,7 @@ class ModCommandGameTests {
         val status = Harness.keysSentTo(null, runtime) { Harness.serverDispatcher(helper).execute("manymanycommands", Harness.console(helper)) }
         val reload = Harness.record(runtime) { Harness.serverDispatcher(helper).execute("manymanycommands reload", Harness.console(helper)) }.map { it.message }
         helper.assertValueEqual(status.size, SETTINGS_STATUS_LINE + FILES.size, "l'état donne tous les fichiers")
-        helper.assertValueEqual(reload.takeLast(4), listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json").map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "le rechargement donne les données du monde en dernier, sous world/")
+        helper.assertValueEqual(reload.takeLast(5), listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json").map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, "le rechargement donne les données du monde en dernier, sous world/")
         helper.succeed()
     }
 
@@ -106,7 +106,7 @@ class ModCommandGameTests {
         val runtime = Harness.serverRuntime(helper)
         val dispatcher = Harness.serverDispatcher(helper)
         val player = Harness.player(helper)
-        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json")
+        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
 
         val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }

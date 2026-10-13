@@ -15,6 +15,7 @@ import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
 import fr.roumoulou.manymanycommands.rules.settings.PermissionSourceSetting
+import fr.roumoulou.manymanycommands.rules.tpa.TpaData
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
 import fr.roumoulou.manymanycommands.rules.warps.WarpsData
 import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
@@ -38,7 +39,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages et le fichier de données de son monde, le fichier invalide au
+ * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages et les cinq fichiers de données de son monde, le fichier invalide au
  * démarrage et au rechargement (cahier des charges, chapitre 2.7.3), et les réglages qui attendent le redémarrage (`manymanycommands.md` des
  * specs, chapitre 2).
  */
@@ -52,7 +53,7 @@ class ModRuntimeTest {
         private val SETTINGS_FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
 
         /** Tous les fichiers : les réglages, puis les données du monde. */
-        private val FILES = SETTINGS_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json")
+        private val FILES = SETTINGS_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
 
         private val TABLES = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
 
@@ -122,14 +123,14 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'état donne la version, la source des droits et les dix fichiers, les données du monde en dernier`() {
+    fun `l'état donne la version, la source des droits et les onze fichiers, les données du monde en dernier`() {
         val expected = listOf(ModMessages.STATUS_VERSION.with(VERSION), ModMessages.STATUS_SOURCE.with("internal")) + FILES.map { ModMessages.STATUS_FILE_VALID.with(it) }
 
         assertEquals(expected, start().status())
     }
 
     @Test
-    fun `le rechargement donne une ligne par fichier, les dix appliqués`() {
+    fun `le rechargement donne une ligne par fichier, les onze appliqués`() {
         assertEquals(FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, start().reload())
     }
 
@@ -152,11 +153,13 @@ class ModRuntimeTest {
         assertTrue(worldDirectory.resolve("warps.json").exists(), "warps.json must be created in the world folder of the mod")
         assertTrue(worldDirectory.resolve("back.json").exists(), "back.json must be created in the mod's folder of the world")
         assertTrue(worldDirectory.resolve("wild.json").exists(), "wild.json must be created in the world folder of the mod")
+        assertTrue(worldDirectory.resolve("tpa.json").exists(), "tpa.json must be created in the world folder of the mod")
         assertEquals(FILES, runtime.files.map { it.name })
         assertEquals(HomesData(), runtime.worldData?.homes?.content)
         assertEquals(WarpsData(), runtime.worldData?.warps?.content)
         assertEquals(true, runtime.worldData?.back?.isAvailable)
         assertEquals(true, runtime.worldData?.wild?.isAvailable)
+        assertEquals(TpaData(), runtime.worldData?.tpa?.content)
         assertFalse(runtime.hasShippedSettingsInPlace, "A data file is not a settings file: nothing shipped stands in its place")
     }
 
