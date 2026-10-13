@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation ont leurs règles en mémoire, leurs messages et `tpa.json`, pas encore leurs six commandes ; la branche `/homes player` n'a pas les siennes non plus |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion et `tpa.json`, sans le voyage encore ; la branche `/homes player` n'a pas ses commandes |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
@@ -53,10 +53,17 @@ niveau, elles n'existent pas pour le joueur, ni à la complétion ni à l'exécu
 | `/wild` | téléporte le joueur vers un point tiré au hasard dans une couronne autour du point d'apparition du monde, à la surface, sur un bloc solide, hors de l'eau et de la lave, par le déroulé commun ; dix tirages au plus, puis un refus qui invite à réessayer |
 | `/wild timed` | le tirage commun : le premier joueur ouvre un créneau et tire le point, et ceux qui le lancent pendant le créneau, dans la même dimension, le rejoignent |
 | `/rtp [timed]` | l'alias de `/wild`, que le réglage `aliases` de `rules/wild.json` désactive |
+| `/tpa <player>`, `/tpahere <player>` | demande à rejoindre un joueur connecté, ou lui demande de venir : le destinataire reçoit la demande, le temps pour répondre et deux mots cliquables, accepter et refuser ; refusée à soi-même, à un joueur non connecté, à qui a fermé sa réception, sous l'intervalle entre deux demandes au même joueur, et sous le quota du demandeur |
+| `/tpaaccept [<player>]`, `/tpadeny [<player>]` | accepte ou refuse la demande du joueur nommé, ou sans nom la dernière reçue : la demande est consommée et les deux joueurs prévenus ; le voyage n'est pas encore lancé |
+| `/tpacancel` | annule la demande envoyée, et son destinataire l'apprend |
+| `/tpatoggle` | ferme ou rouvre la réception des demandes, conservée dans `tpa.json` |
 
-Les commandes des homes, `/back`, `/wild` et `/wild timed` exigent un joueur, et sont ouvertes à tout joueur par
-défaut, chacune sous son nœud (`manymanycommands.homes.<commande>`, `manymanycommands.back`, `manymanycommands.wild`,
-`manymanycommands.wild.timed`). Dans `/warps`, `teleport` et `list` le
+Les commandes des homes, `/back`, `/wild`, `/wild timed` et les six commandes des demandes exigent un joueur, et
+sont ouvertes à tout joueur par défaut, chacune sous son nœud (`manymanycommands.homes.<commande>`,
+`manymanycommands.back`, `manymanycommands.wild`, `manymanycommands.wild.timed`, `manymanycommands.tpa`,
+`manymanycommands.tpahere`, `manymanycommands.tpaaccept`, `manymanycommands.tpadeny`, `manymanycommands.tpacancel`,
+`manymanycommands.tpatoggle`). Une demande vit `request-lifetime` secondes, une seule par demandeur, la nouvelle
+annulant la précédente ; elle tombe quand l'un des deux joueurs se déconnecte, ce que l'autre apprend. Dans `/warps`, `teleport` et `list` le
 sont aussi ; `create`, `delete`, `rename`, `move`, `restrict`, `unrestrict` et l'envoi (`teleport.others`) vont
 aux maîtres du jeu, qui reçoivent aussi tous les nœuds d'accès, et à la console, qui lance tout sauf ce qui a
 besoin d'une position : `create` et `move` sans `<pos>`, `teleport` sans `<targets>`. Une commande qui modifie
@@ -102,8 +109,8 @@ le premier dans l'ordre du fichier. `enabled` et `aliases` prennent effet au red
 le reste au rechargement. Les valeurs livrées et les valeurs admises de chaque clé sont dans la fiche de
 sa famille, dans les spécifications.
 
-Les homes, les warps, le retour et la téléportation aléatoire lisent leurs règles ; les demandes de
-téléportation n'ont pas encore leurs commandes. Le déroulé d'une téléportation, que `/homes teleport`,
+Les cinq familles lisent leurs règles ; les demandes y prennent la durée de vie et l'intervalle d'une demande,
+et leur voyage n'est pas encore lancé. Le déroulé d'une téléportation, que `/homes teleport`,
 `/warps teleport`, `/back` et `/wild` lancent, applique celles de sa famille : les
 refus dans leur ordre, le délai d'immobilité et son compte à rebours dans la barre d'action, l'annulation
 quand le joueur bouge, est blessé, meurt, change de dimension ou se déconnecte, le cooldown par famille, le
@@ -169,9 +176,9 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 344 tests |
-| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 135 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par un joueur simulé et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 97 gametests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 345 tests |
+| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 137 tests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 111 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
