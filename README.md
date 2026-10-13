@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; la branche `/homes player` et les demandes de téléportation n'ont pas encore leurs commandes |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation ont leurs règles en mémoire, leurs messages et `tpa.json`, pas encore leurs six commandes ; la branche `/homes player` n'a pas les siennes non plus |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
@@ -23,7 +23,7 @@ Les spécifications du mod vivent dans `01-docs\specs\` du classeur, hors du dé
 
 | Commande | Ce qu'elle fait |
 |---|---|
-| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`, `world/wild.json`), valide ou refusé |
+| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`, `world/wild.json`, `world/tpa.json`), valide ou refusé |
 | `/manymanycommands reload` | relit les fichiers du mod, réglages et données : une ligne par fichier, appliqué, ou refusé avec ses constats, puis les réglages qui attendent le redémarrage |
 | `/mmc` | alias de `/manymanycommands` et de ses sous-commandes |
 
@@ -66,11 +66,11 @@ home ou un warp, la téléportation aléatoire, l'envoi par un administrateur, `
 inactive par défaut. Elle vit en mémoire et s'efface au redémarrage du serveur.
 
 Les données des familles vivent dans `<monde>/manymanycommands/` : `homes.json`, les homes et la plage de
-quota de chaque joueur, `warps.json`, les warps du serveur et la plage de quota de chaque joueur, et
-`back.json` et `wild.json`, la plage de quota du retour et de la téléportation aléatoire. Le mod les écrit
-à chaque changement,
-et une plage de quota survit ainsi au redémarrage du serveur. Un fichier de données invalide rend sa famille
-indisponible, sans être réécrit, jusqu'à sa correction et un `reload`.
+quota de chaque joueur, `warps.json`, les warps du serveur et la plage de quota de chaque joueur,
+`back.json` et `wild.json`, la plage de quota du retour et de la téléportation aléatoire, et `tpa.json`, la
+réception fermée des demandes (`requests-closed`) et la plage de quota de chaque joueur. Le mod les écrit à
+chaque changement, et une plage de quota survit ainsi au redémarrage du serveur. Un fichier de données
+invalide rend sa famille indisponible, sans être réécrit, jusqu'à sa correction et un `reload`.
 
 Le mod crée ses fichiers de réglages à son premier lancement, sous `config/manymanycommands/`, recrée
 celui qui manque, et ne réécrit jamais un fichier qui existe. `settings.json` porte les réglages qui valent
@@ -169,8 +169,8 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 327 tests |
-| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 130 tests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 344 tests |
+| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 135 tests |
 | 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par un joueur simulé et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 97 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
