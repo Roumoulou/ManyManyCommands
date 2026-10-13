@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  PLUGIN DE CONVENTION — manymanycommands.loom-module
+ *  PLUGIN DE CONVENTION : manymanycommands.loom-module
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Ce que partagent TOUS les modules du mod, common comme les modules de version :
@@ -41,7 +41,7 @@ val libs = the<VersionCatalogsExtension>().named("libs")
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 1 — L'IDENTITÉ
+ *  SECTION 1 : L'IDENTITÉ
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Lue dans gradle.properties, que les modules héritent de la racine : chaque
@@ -73,7 +73,7 @@ val modId = providers.gradleProperty("mod_id").get()
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 2 — LES DÉPÔTS DE DÉPENDANCES
+ *  SECTION 2 : LES DÉPÔTS DE DÉPENDANCES
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  LE SEUL ENDROIT OÙ DÉCLARER UN DÉPÔT DE DÉPENDANCES, pour tous les modules.
@@ -152,7 +152,7 @@ tasks.register("listRepositories") {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 3 — JAVA, LOOM ET LES SOURCE SETS
+ *  SECTION 3 : JAVA, LOOM ET LES SOURCE SETS
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  - toolchain            : force Gradle à compiler avec un JDK précis, celui de la
@@ -196,7 +196,7 @@ loom {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 4 — LES COMPILATEURS
+ *  SECTION 4 : LES COMPILATEURS
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  L'encodage UTF-8 est forcé côté Java ; le filtrage des ressources le force de son

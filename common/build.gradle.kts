@@ -2,7 +2,7 @@
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  MODULE common — le code partagé par toutes les versions du jeu
+ *  MODULE common : le code partagé par toutes les versions du jeu
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Tout le mod, sauf ce qu'une version du jeu ne partage pas avec les autres : le
@@ -30,7 +30,7 @@ plugins {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 1 — LA VERSION DE COMPILATION ET LES DÉPENDANCES
+ *  SECTION 1 : LA VERSION DE COMPILATION ET LES DÉPENDANCES
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  common se compile contre la dernière release de Minecraft servie, 26.3, et lit
@@ -89,7 +89,7 @@ tasks.named("sourcesJar") { enabled = false }
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 2 — LES TROIS ÉTAGES DE TEST
+ *  SECTION 2 : LES TROIS ÉTAGES DE TEST
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Trois source sets de test, tous ici. Entre les deux premiers, c'est le
@@ -162,7 +162,7 @@ dependencies {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 3 — LE CLASSPATH DES ÉTAGES 0, 1 ET 2
+ *  SECTION 3 : LE CLASSPATH DES ÉTAGES 0, 1 ET 2
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Loom ajoute Minecraft DIRECTEMENT sur les source sets de test, sans passer par
@@ -222,7 +222,7 @@ tasks.test {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 4 — L'ÉCRAN DE CONFIGURATION EN JEU, DÉPENDANCES FACULTATIVES
+ *  SECTION 4 : L'ÉCRAN DE CONFIGURATION EN JEU, DÉPENDANCES FACULTATIVES
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  De quoi compiler un écran de configuration dans le source set `client` : Mod
@@ -248,7 +248,7 @@ dependencies {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 5 — CE QUE COMMON PUBLIE POUR LES MODULES DE VERSION
+ *  SECTION 5 : CE QUE COMMON PUBLIE POUR LES MODULES DE VERSION
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Trois configurations consommables, sans dépendances : un module de version les

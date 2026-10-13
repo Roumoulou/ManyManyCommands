@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  BUILD-LOGIC — les plugins de convention du mod
+ *  BUILD-LOGIC : les plugins de convention du mod
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Deux plugins, écrits en scripts Kotlin précompilés dans src/main/kotlin, et que

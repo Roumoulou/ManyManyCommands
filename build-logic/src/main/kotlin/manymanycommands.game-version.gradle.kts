@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  PLUGIN DE CONVENTION — manymanycommands.game-version
+ *  PLUGIN DE CONVENTION : manymanycommands.game-version
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Un module de version, mc-<version du jeu> : le mod livrable pour CETTE version.
@@ -60,7 +60,7 @@ val modId = providers.gradleProperty("mod_id").get()
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 1 — LA VERSION SERVIE
+ *  SECTION 1 : LA VERSION SERVIE
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Deux versions du jeu, chacune à sa place :
@@ -132,7 +132,7 @@ configurations.named("implementation") {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 2 — LES DÉPENDANCES COMMUNES À TOUTES LES VERSIONS
+ *  SECTION 2 : LES DÉPENDANCES COMMUNES À TOUTES LES VERSIONS
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  ── LE CODE DE COMMON : SES CLASSES, PAS SES DÉPENDANCES ────────────────────
@@ -182,7 +182,7 @@ dependencies {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 3 — LE MOD EN DÉVELOPPEMENT
+ *  SECTION 3 : LE MOD EN DÉVELOPPEMENT
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  `mods { }` regroupe sous le MÊME identifiant de mod les source sets du module et
@@ -217,7 +217,7 @@ loom {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 4 — LES RESSOURCES
+ *  SECTION 4 : LES RESSOURCES
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Les ressources du mod vivent dans common/src/main/resources, et chaque module de
@@ -269,7 +269,7 @@ tasks.processResources {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 5 — LE JAR LIVRABLE
+ *  SECTION 5 : LE JAR LIVRABLE
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Le jar d'une version porte le mod entier : les classes du module, celles de
@@ -324,7 +324,7 @@ tasks.named("check") { dependsOn(checkReleaseJar) }
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 6 — ÉTAGE 1 DES TESTS : LE JEU AMORCÉ
+ *  SECTION 6 : ÉTAGE 1 DES TESTS : LE JEU AMORCÉ
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Les tests de l'étage 1 vivent dans common (src/testMC) et s'y compilent, contre
@@ -417,7 +417,7 @@ tasks.named("check") { dependsOn(runTestMC) }
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 7 — ÉTAGE 2 DES TESTS : LE SERVEUR GAMETEST
+ *  SECTION 7 : ÉTAGE 2 DES TESTS : LE SERVEUR GAMETEST
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  `fabricApi.configureTests` de Loom crée le source set `gametest` et le run
@@ -475,7 +475,7 @@ afterEvaluate {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 8 — LA VÉRIFICATION DE COMPATIBILITÉ
+ *  SECTION 8 : LA VÉRIFICATION DE COMPATIBILITÉ
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  common se compile contre la dernière release : le compilateur ne voit pas ce
@@ -519,7 +519,7 @@ tasks.named("check") { dependsOn(checkCommonCompatibility) }
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 9 — LA PUBLICATION MAVEN
+ *  SECTION 9 : LA PUBLICATION MAVEN
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Publication locale de l'artefact. La distribution publique du mod, sur Modrinth
@@ -554,7 +554,7 @@ publishing {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 10 — LA PUBLICATION SUR MODRINTH ET CURSEFORGE
+ *  SECTION 10 : LA PUBLICATION SUR MODRINTH ET CURSEFORGE
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  mod-publish-plugin envoie le jar de CE module sur les deux plateformes : une

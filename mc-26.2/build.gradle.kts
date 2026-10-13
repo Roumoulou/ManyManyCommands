@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  MODULE mc-26.2 — le mod pour Minecraft 26.2
+ *  MODULE mc-26.2 : le mod pour Minecraft 26.2
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Ce que le plugin manymanycommands.game-version fait de ce module (le jar
@@ -31,7 +31,7 @@ plugins {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 1 — LES DÉPENDANCES DE 26.2
+ *  SECTION 1 : LES DÉPENDANCES DE 26.2
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  - minecraft                  : le jeu, en 26.2.
@@ -57,7 +57,7 @@ dependencies {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 2 — LES ENVIRONNEMENTS DE DÉVELOPPEMENT : OUTFITTER
+ *  SECTION 2 : LES ENVIRONNEMENTS DE DÉVELOPPEMENT : OUTFITTER
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Le plugin Outfitter (S:\16\_V\Outfitter, consommé en build composite : voir

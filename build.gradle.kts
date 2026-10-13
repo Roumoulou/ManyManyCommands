@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  BUILD SCRIPT — ManyManyCommands
+ *  BUILD SCRIPT : ManyManyCommands
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  La racine ne construit rien. Les modules et leur rôle sont décrits dans

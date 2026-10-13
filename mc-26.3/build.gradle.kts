@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  MODULE mc-26.3 — le mod pour Minecraft 26.3
+ *  MODULE mc-26.3 : le mod pour Minecraft 26.3
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Ce que le plugin manymanycommands.game-version fait de ce module (le jar
@@ -31,7 +31,7 @@ plugins {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 1 — LES DÉPENDANCES DE 26.3
+ *  SECTION 1 : LES DÉPENDANCES DE 26.3
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  - minecraft                  : le jeu, en 26.3.
@@ -57,7 +57,7 @@ dependencies {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  SECTION 2 — LES ENVIRONNEMENTS DE DÉVELOPPEMENT : OUTFITTER
+ *  SECTION 2 : LES ENVIRONNEMENTS DE DÉVELOPPEMENT : OUTFITTER
  * ════════════════════════════════════════════════════════════════════════════════
  *
  *  Même mécanique que mc-26.2 (voir son build) : deux environnements, le serveur
