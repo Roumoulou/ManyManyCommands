@@ -9,6 +9,7 @@ import fr.roumoulou.manymanycommands.files.homes.HomesDataFile
 import fr.roumoulou.manymanycommands.files.homes.HomesRulesFile
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.files.settings.GlobalSettingsFile
+import fr.roumoulou.manymanycommands.files.tpa.TpaDataFile
 import fr.roumoulou.manymanycommands.files.tpa.TpaRulesFile
 import fr.roumoulou.manymanycommands.files.warps.WarpsDataFile
 import fr.roumoulou.manymanycommands.files.warps.WarpsRulesFile
@@ -44,6 +45,9 @@ import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaLedger
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsage
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
+import fr.roumoulou.manymanycommands.rules.tpa.TpaData
+import fr.roumoulou.manymanycommands.rules.tpa.TpaHoldings
+import fr.roumoulou.manymanycommands.rules.tpa.TpaRequests
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
 import fr.roumoulou.manymanycommands.rules.warps.WarpsData
 import fr.roumoulou.manymanycommands.rules.warps.WarpsRules
@@ -121,6 +125,9 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     /** Les créneaux du tirage commun de `/wild timed` (`wild.md` des specs, chapitre 4), un par dimension, en mémoire : ils s'effacent de même. */
     val wildWindows = TimedWindows()
+
+    /** Les demandes de téléportation en attente et l'intervalle entre deux demandes (`tpa.md` des specs, chapitres 2 et 4), en mémoire : ils s'effacent de même. */
+    val requests = TpaRequests()
 
     /**
      * Les réglages globaux lus à l'ouverture. Les commandes s'enregistrent sur eux, et ceux qui ne prennent effet qu'au redémarrage du serveur
@@ -213,8 +220,11 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         /** `wild.json` : la plage de quota de chaque joueur, et rien d'autre. */
         val wild: DataFile<WildData> = WildDataFile.at(directory)
 
+        /** `tpa.json` : la réception des demandes et la plage de quota de chaque joueur. */
+        val tpa: DataFile<TpaData> = TpaDataFile.at(directory)
+
         /** Les fichiers de données, dans l'ordre où l'état et le rechargement les donnent, celui du cahier des charges. */
-        val files: List<DataFile<*>> = listOf(homes, warps, back, wild)
+        val files: List<DataFile<*>> = listOf(homes, warps, back, wild, tpa)
 
         /** Les plages de quota conservées dans un fichier de données, par famille : celles des familles qui ont le leur. */
         val quotas: Map<String, DataFileQuotas<*>> = mapOf(
@@ -222,6 +232,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
             WarpsRules.family to DataFileQuotas(warps, { data, player -> data.players[player]?.quota }, { data, player, name, usage -> data.copy(players = data.players.withQuota(player, name, usage, NoHoldings)) }),
             BackRules.family to DataFileQuotas.ofFamily(back, NoHoldings),
             WildRules.family to DataFileQuotas.ofFamily(wild, NoHoldings),
+            TpaRules.family to DataFileQuotas.ofFamily(tpa, TpaHoldings()),
         )
 
         init {
