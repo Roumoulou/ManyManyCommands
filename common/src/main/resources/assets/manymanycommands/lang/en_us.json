@@ -27,6 +27,7 @@
   "manymanycommands.common.source.in_game_only": "This command runs in game.",
   "manymanycommands.common.placement.out_of_bounds": "This point is outside the limits of the world.",
   "manymanycommands.common.console.detail": "%s: %s",
+  "manymanycommands.common.console.choice": "%s (%s)",
 
   "manymanycommands.common.allowed.at_least": "%s or more",
   "manymanycommands.common.allowed.range": "from %s to %s",

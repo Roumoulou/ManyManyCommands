@@ -8,6 +8,7 @@ import fr.roumoulou.manymanycommands.ModRuntime
 import fr.roumoulou.manymanycommands.commands.back.BackCommand
 import fr.roumoulou.manymanycommands.commands.homes.HomesCommand
 import fr.roumoulou.manymanycommands.commands.mod.ManyManyCommandsCommand
+import fr.roumoulou.manymanycommands.commands.tpa.TpaCommand
 import fr.roumoulou.manymanycommands.commands.warps.WarpsCommand
 import fr.roumoulou.manymanycommands.commands.wild.WildCommand
 import net.minecraft.commands.CommandSourceStack
@@ -22,5 +23,6 @@ object ModCommands {
         WarpsCommand(runtime).register(dispatcher)
         BackCommand(runtime).register(dispatcher)
         WildCommand(runtime).register(dispatcher)
+        TpaCommand(runtime).register(dispatcher)
     }
 }

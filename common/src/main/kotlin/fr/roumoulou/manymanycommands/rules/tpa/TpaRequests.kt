@@ -22,14 +22,15 @@ enum class RequestKind {
 }
 
 /**
- * Une demande en attente (`tpa.md` des specs, chapitres 1 et 2).
+ * Une demande en attente (`tpa.md` des specs, chapitres 1 et 2). Elle porte le nom de ses deux joueurs au moment de l'envoi : c'est par lui
+ * que les messages les nomment, un joueur parti compris.
  *
  * @property requester le joueur qui l'a envoyée
  * @property recipient le joueur qui en décide
  * @property sentAt l'instant de l'envoi
  * @property expiresAt l'instant où elle expire, au terme de sa durée de vie
  */
-data class TpaRequest(val requester: UUID, val recipient: UUID, val kind: RequestKind, val sentAt: Instant, val expiresAt: Instant) {
+data class TpaRequest(val requester: UUID, val requesterName: String, val recipient: UUID, val recipientName: String, val kind: RequestKind, val sentAt: Instant, val expiresAt: Instant) {
 
     /** Le joueur qui voyage à l'acceptation. */
     val traveler: UUID get() = if (kind == RequestKind.TPA) requester else recipient
@@ -37,10 +38,16 @@ data class TpaRequest(val requester: UUID, val recipient: UUID, val kind: Reques
     /** Le joueur que le voyageur rejoint. */
     val host: UUID get() = if (kind == RequestKind.TPA) recipient else requester
 
+    /** La durée de vie de la demande, le temps pour répondre. */
+    val lifetimeSeconds: Long get() = Duration.between(sentAt, expiresAt).seconds
+
     fun involves(player: UUID): Boolean = player == requester || player == recipient
 
     /** L'autre joueur de la demande, vu de [player]. */
     fun other(player: UUID): UUID = if (player == requester) recipient else requester
+
+    /** Le nom de [player], l'un des deux joueurs de la demande. */
+    fun nameOf(player: UUID): String = if (player == requester) requesterName else recipientName
 
     fun isExpired(now: Instant): Boolean = !now.isBefore(expiresAt)
 }
@@ -66,8 +73,8 @@ sealed interface TpaAnswer {
  * Les demandes en attente (`tpa.md` des specs, chapitres 2 et 3), et les derniers envois d'où se mesure l'intervalle entre deux demandes au
  * même joueur (chapitre 4). Tout vit en mémoire et s'efface avec l'état du mod, au redémarrage du serveur.
  *
- * Chaque commande y est une règle pure : elle reçoit des valeurs et l'instant, et rend son issue. Les joueurs y sont des UUID, et un message
- * nomme l'autre joueur par le nom qu'on lui donne.
+ * Chaque commande y est une règle pure : elle reçoit des valeurs et l'instant, et rend son issue. Les joueurs y sont des UUID, avec le nom qu'on
+ * leur donne à l'envoi, celui des messages.
  */
 class TpaRequests {
 
@@ -76,6 +83,9 @@ class TpaRequests {
 
     /** Le dernier envoi d'un demandeur à un destinataire, quelle qu'en ait été l'issue. */
     private val lastSentAt = HashMap<Pair<UUID, UUID>, Instant>()
+
+    /** Toutes les demandes en attente, dans l'ordre de leur envoi. */
+    val pending: List<TpaRequest> get() = outgoing.values.toList()
 
     fun outgoing(requester: UUID): TpaRequest? = outgoing[requester]
 
@@ -96,8 +106,9 @@ class TpaRequests {
      * `/tpa <player>` et `/tpahere <player>` (chapitre 3.1) : le premier des refus, dans l'ordre de la fiche, ou la demande envoyée, qui annule
      * la demande sortante que le demandeur avait (chapitre 2).
      *
+     * @param requesterName le nom du demandeur, celui des messages
      * @param recipient le joueur connecté que `<player>` désigne, `null` quand aucun ne porte ce nom
-     * @param recipientName le nom tapé, celui des messages
+     * @param recipientName le nom du destinataire, ou le nom tapé quand personne ne le porte, celui des messages
      * @param isRecipientClosed le destinataire a fermé la réception des demandes
      * @param settings les réglages du serveur des demandes : la durée de vie et l'intervalle
      * @param quota le quota du demandeur, `null` quand il n'en a pas ou en est dispensé
@@ -105,6 +116,7 @@ class TpaRequests {
      */
     fun send(
         requester: UUID,
+        requesterName: String,
         recipient: UUID?,
         recipientName: String,
         kind: RequestKind,
@@ -124,7 +136,7 @@ class TpaRequests {
             if (wait > 0) return TpaSending.Refused(TpaMessages.quotaReached(quota.uses, DurationWording.text(wait)))
         }
         val cancelled = outgoing.remove(requester)
-        val request = TpaRequest(requester, recipient, kind, now, now.plusSeconds(settings[TpaRules.requestLifetime]))
+        val request = TpaRequest(requester, requesterName, recipient, recipientName, kind, now, now.plusSeconds(settings[TpaRules.requestLifetime]))
         outgoing[requester] = request
         lastSentAt[requester to recipient] = now
         return TpaSending.Sent(request, cancelled)

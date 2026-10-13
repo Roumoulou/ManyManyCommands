@@ -3,6 +3,8 @@
 
 package fr.roumoulou.manymanycommands.rules.tpa
 
+import fr.roumoulou.manymanycommands.rules.common.DurationWording
+import fr.roumoulou.manymanycommands.rules.message.Choice
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.message.MessageFamily
 import fr.roumoulou.manymanycommands.rules.message.TranslatableText
@@ -69,4 +71,15 @@ object TpaMessages : MessageFamily("tpa") {
 
     /** Le quota atteint : le nombre d'usages, une quantité, et ce qui reste à attendre, une durée. */
     fun quotaReached(uses: Long, wait: TranslatableText): Message = (if (uses == 1L) QUOTA_REACHED_ONE else QUOTA_REACHED_MANY).with(uses, wait)
+
+    /** La demande reçue (chapitre 2) : le demandeur, le sens du voyage, le temps pour répondre, et les deux mots cliquables, qui nomment le demandeur. */
+    fun received(kind: RequestKind, requesterName: String, lifetimeSeconds: Long): Message =
+        (if (kind == RequestKind.TPA) RECEIVED_TPA else RECEIVED_TPAHERE).with(requesterName, DurationWording.text(lifetimeSeconds))
+            .withChoices(Choice(ACCEPT_WORD.with(), acceptCommand(requesterName)), Choice(DENY_WORD.with(), denyCommand(requesterName)))
+
+    /** La commande qu'un clic sur le mot d'acceptation lance. */
+    fun acceptCommand(requesterName: String): String = "/tpaaccept $requesterName"
+
+    /** La commande qu'un clic sur le mot de refus lance. */
+    fun denyCommand(requesterName: String): String = "/tpadeny $requesterName"
 }

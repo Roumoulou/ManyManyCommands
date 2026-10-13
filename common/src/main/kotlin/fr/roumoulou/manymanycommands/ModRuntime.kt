@@ -47,6 +47,7 @@ import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsage
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
 import fr.roumoulou.manymanycommands.rules.tpa.TpaData
 import fr.roumoulou.manymanycommands.rules.tpa.TpaHoldings
+import fr.roumoulou.manymanycommands.rules.tpa.TpaMessages
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRequests
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
 import fr.roumoulou.manymanycommands.rules.warps.WarpsData
@@ -55,6 +56,7 @@ import fr.roumoulou.manymanycommands.rules.wild.TimedWindows
 import fr.roumoulou.manymanycommands.rules.wild.WildData
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
 import net.minecraft.commands.CommandSourceStack
+import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -176,6 +178,24 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
      */
     fun recordReturn(player: ServerPlayer, source: BackSource, from: Location) {
         if (ReturnRules.records(ruleSet(player.createCommandSourceStack(), BackRules), source)) returns.record(player.uuid, from.toPosition())
+    }
+
+    /**
+     * À chaque tick du serveur (`tpa.md` des specs, chapitre 2) : les demandes de téléportation d'un joueur qui n'est plus connecté tombent, et
+     * l'autre joueur de chacune l'apprend ; puis les demandes expirées tombent, et leurs deux joueurs l'apprennent. La déconnexion se constate
+     * ici, comme le moteur la constate pour une téléportation en attente, et non par un événement du jeu.
+     */
+    fun tickRequests(server: MinecraftServer) {
+        val players = server.playerList
+        requests.pending.forEach { request ->
+            val gone = listOf(request.requester, request.recipient).firstOrNull { players.getPlayer(it) == null } ?: return@forEach
+            requests.drop(gone)
+            players.getPlayer(request.other(gone))?.let { messenger.tell(it, TpaMessages.DISCONNECTED.with(request.nameOf(gone))) }
+        }
+        requests.expire(clock.instant()).forEach { request ->
+            players.getPlayer(request.requester)?.let { messenger.tell(it, TpaMessages.EXPIRED_REQUESTER.with(request.recipientName)) }
+            players.getPlayer(request.recipient)?.let { messenger.tell(it, TpaMessages.EXPIRED_RECIPIENT.with(request.requesterName)) }
+        }
     }
 
     /** La réponse de `/manymanycommands`. */

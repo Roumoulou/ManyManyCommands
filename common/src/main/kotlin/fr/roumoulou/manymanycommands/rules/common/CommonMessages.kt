@@ -28,8 +28,9 @@ object CommonMessages : MessageFamily("common") {
     // Le placement (chapitre 2.9) : le refus d'un point hors de la bordure du monde ou de la hauteur de la dimension.
     val PLACEMENT_OUT_OF_BOUNDS = refusal("placement.out_of_bounds")
 
-    // Ce qu'un joueur lit au survol d'un message, la console le reçoit en clair à la suite du message.
+    // Ce qu'un joueur lit au survol d'un message, la console le reçoit en clair à la suite du message ; de même pour chaque mot cliquable, avec sa commande.
     val CONSOLE_DETAIL = fragment("console.detail")
+    val CONSOLE_CHOICE = fragment("console.choice")
 
     // Les constats d'un fichier refusé (chapitre 2.7.4).
     val FINDING_UNKNOWN_KEY = fragment("finding.unknown_key")

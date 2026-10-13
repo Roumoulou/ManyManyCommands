@@ -22,22 +22,29 @@ class MessageComponents(private val texts: TextCatalog) {
     /**
      * Pour un joueur : la clé de traduction, le texte de repli dans [language] et les arguments. Son client affiche la traduction de la clé s'il
      * la connaît, par un resourcepack du serveur ou parce qu'il porte le mod, et le repli sinon. Un message qui se clique ou se survole porte sa
-     * commande et son texte de survol dans son style.
+     * commande et son texte de survol dans son style. Chaque mot cliquable suit le texte, séparé d'une espace, avec sa commande dans le sien.
      */
     fun forPlayer(message: Message, language: Language): MutableComponent {
         val component = translatable(message.text, language).withStyle(formatting(message.type.color))
-        val interaction = message.interaction ?: return component
-        return component.withStyle { style: Style ->
-            val clickable = interaction.clickCommand?.let { style.withClickEvent(ClickEvent.RunCommand(it)) } ?: style
-            interaction.hover?.let { clickable.withHoverEvent(HoverEvent.ShowText(translatable(it, language))) } ?: clickable
+        message.interaction?.let { interaction ->
+            component.withStyle { style: Style ->
+                val clickable = interaction.clickCommand?.let { style.withClickEvent(ClickEvent.RunCommand(it)) } ?: style
+                interaction.hover?.let { clickable.withHoverEvent(HoverEvent.ShowText(translatable(it, language))) } ?: clickable
+            }
         }
+        message.choices.forEach { choice ->
+            component.append(" ")
+            component.append(translatable(choice.label, language).withStyle { style: Style -> style.withClickEvent(ClickEvent.RunCommand(choice.clickCommand)) })
+        }
+        return component
     }
 
-    /** Pour la console : le texte que le mod résout lui-même, dans [language]. Ce qu'un joueur lirait au survol la suit, en clair. */
+    /** Pour la console : le texte que le mod résout lui-même, dans [language]. Ce qu'un joueur lirait au survol la suit, en clair, puis chaque mot cliquable avec sa commande. */
     fun forConsole(message: Message, language: Language): MutableComponent {
         val hover = message.interaction?.hover
         val text = if (hover == null) message.text else CommonMessages.CONSOLE_DETAIL.with(message.text, hover)
-        return Component.literal(texts.resolve(language, text)).withStyle(formatting(message.type.color))
+        val choices = message.choices.joinToString("") { " " + texts.resolve(language, CommonMessages.CONSOLE_CHOICE.with(it.label, it.clickCommand)) }
+        return Component.literal(texts.resolve(language, text) + choices).withStyle(formatting(message.type.color))
     }
 
     private fun translatable(text: TranslatableText, language: Language): MutableComponent {

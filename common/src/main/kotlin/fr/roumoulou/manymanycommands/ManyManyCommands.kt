@@ -55,8 +55,14 @@ class ManyManyCommands : ModInitializer {
         }
         ServerPlayConnectionEvents.JOIN.register { handler, _, _ -> runtime?.greet(handler.player) }
 
-        // Les téléportations en attente : le tick fait s'écouler leur délai et annule celles dont le joueur a bougé, est mort ou parti.
-        ServerTickEvents.END_SERVER_TICK.register { runtime?.teleports?.tick() }
+        // Le tick fait s'écouler le délai des téléportations en attente et annule celles dont le joueur a bougé, est mort ou parti ; il fait
+        // tomber les demandes de téléportation d'un joueur parti et les demandes expirées.
+        ServerTickEvents.END_SERVER_TICK.register { server ->
+            runtime?.let {
+                it.teleports.tick()
+                it.tickRequests(server)
+            }
+        }
         // Un coup paré par un bouclier ne blesse pas. Un coup mortel n'a pas d'après : la mort a le sien.
         ServerLivingEntityEvents.AFTER_DAMAGE.register { entity, _, baseDamageTaken, _, blocked -> if (baseDamageTaken > 0f && !blocked) onPlayerHurt(entity) }
         ServerLivingEntityEvents.AFTER_DEATH.register { entity, _ -> if (entity is ServerPlayer) onPlayerDied(entity) }
