@@ -34,9 +34,9 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
 /**
- * Les six commandes des demandes de téléportation, sans le voyage (`tpa.md` des specs, chapitres 2 à 5), jouées par des joueurs simulés nommés :
- * chaque situation du tableau des messages que ces commandes, l'expiration et la déconnexion produisent a son test, reconnue à sa clé, et les
- * deux mots cliquables se lisent dans le composant de la demande reçue.
+ * Les six commandes des demandes de téléportation (`tpa.md` des specs, chapitres 2 à 5), jouées par des joueurs simulés nommés : chaque situation
+ * du tableau des messages que ces commandes, l'expiration et la déconnexion produisent a son test, reconnue à sa clé, et les deux mots
+ * cliquables se lisent dans le composant de la demande reçue. Le voyage qui suit l'acceptation s'éprouve dans `TpaTeleportGameTests`.
  */
 class TpaCommandGameTests {
 
@@ -157,16 +157,16 @@ class TpaCommandGameTests {
         run(lab, steve, "tpa AlexD")
         run(lab, notch, "tpa AlexD")
 
+        // L'acceptation lance le voyage, dont les messages suivent ceux de l'acceptation : le voyage s'éprouve dans TpaTeleportGameTests.
         val last = run(lab, alex, "tpaaccept")
-        helper.assertValueEqual(last.result, 1, "le résultat de /tpaaccept")
-        helper.assertValueEqual(last.to(alex), listOf(TpaMessages.ACCEPTED_RECIPIENT.with("NotchD")), "sans nom, la dernière reçue, chez le destinataire")
-        helper.assertValueEqual(last.to(notch), listOf(TpaMessages.ACCEPTED_REQUESTER.with("AlexD")), "chez le demandeur")
-        helper.assertValueEqual(last.to(alex).single().type to last.to(notch).single().type, MessageType.SUCCESS to MessageType.SUCCESS, "deux succès")
+        helper.assertValueEqual(last.to(alex).first(), TpaMessages.ACCEPTED_RECIPIENT.with("NotchD"), "sans nom, la dernière reçue, chez le destinataire")
+        helper.assertValueEqual(last.to(notch).first(), TpaMessages.ACCEPTED_REQUESTER.with("AlexD"), "chez le demandeur")
+        helper.assertValueEqual(last.to(alex).first().type to last.to(notch).first().type, MessageType.SUCCESS to MessageType.SUCCESS, "deux succès")
         helper.assertTrue(lab.runtime.requests.outgoing(notch.uuid) == null, "la demande acceptée est consommée")
 
         val named = run(lab, alex, "tpaaccept steved")
-        helper.assertValueEqual(named.to(alex), listOf(TpaMessages.ACCEPTED_RECIPIENT.with("SteveD")), "la demande du joueur nommé, sans égard pour la casse")
-        helper.assertValueEqual(named.to(steve), listOf(TpaMessages.ACCEPTED_REQUESTER.with("AlexD")), "chez le demandeur nommé")
+        helper.assertValueEqual(named.to(alex).first(), TpaMessages.ACCEPTED_RECIPIENT.with("SteveD"), "la demande du joueur nommé, sans égard pour la casse")
+        helper.assertValueEqual(named.to(steve).first(), TpaMessages.ACCEPTED_REQUESTER.with("AlexD"), "chez le demandeur nommé")
         helper.assertValueEqual(run(lab, alex, "tpaaccept").to(alex), listOf(TpaMessages.NONE_PENDING.with()), "aucune demande en attente")
         helper.assertValueEqual(run(lab, alex, "tpaaccept SteveD").to(alex), listOf(TpaMessages.NONE_FROM.with("SteveD")), "aucune demande du joueur nommé")
         helper.assertValueEqual(run(lab, alex, "tpaaccept Herobrine").to(alex), listOf(TpaMessages.NONE_FROM.with("Herobrine")), "ni d'un nom que personne ne porte")

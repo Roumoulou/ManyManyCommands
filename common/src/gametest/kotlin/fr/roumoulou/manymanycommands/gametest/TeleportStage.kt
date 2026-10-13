@@ -63,6 +63,13 @@ class TeleportStage(val helper: GameTestHelper) {
         place(it, departure)
     }
 
+    /** Un joueur simulé nommé [name], en mode survie, le monde chargé, posé à [at] : le voyageur ou l'hôte d'une demande de téléportation. */
+    fun namedPlayer(name: String, at: Location = departure): ServerPlayer = Harness.player(helper, name).also {
+        it.setGameMode(GameType.SURVIVAL)
+        it.connection.handleAcceptPlayerLoad(ServerboundPlayerLoadedPacket())
+        place(it, at)
+    }
+
     /** Une dalle de pierre de 3 blocs sur 3, centrée sur la colonne ([x], [z]) de la structure, et l'endroit où un joueur s'y tient debout. */
     fun platform(x: Int, z: Int): Location {
         for (dx in -1..1) for (dz in -1..1) set(x + dx, FLOOR, z + dz, Blocks.STONE)

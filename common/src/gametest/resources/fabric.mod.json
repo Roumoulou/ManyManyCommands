@@ -20,6 +20,7 @@
       "fr.roumoulou.manymanycommands.gametest.BackCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.WildCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.TpaCommandGameTests",
+      "fr.roumoulou.manymanycommands.gametest.TpaTeleportGameTests",
       "fr.roumoulou.manymanycommands.gametest.TeleportGameTests",
       "fr.roumoulou.manymanycommands.gametest.TeleportCancellationGameTests",
       "fr.roumoulou.manymanycommands.gametest.TeleportArrivalGameTests"
