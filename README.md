@@ -9,10 +9,10 @@ installer pour rejoindre un serveur qui le porte.
 | État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; la branche `/homes player` et les demandes de téléportation n'ont pas encore leurs commandes |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
-| Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.161.0 en 26.3 et 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.1 ou plus récent |
-| Embarqué | Storify 0.4.0-SNAPSHOT, la bibliothèque des fichiers JSON du mod, avec tomlkt et json5, en jar-in-jar |
+| Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
+| Embarqué | Storify 0.6.0-SNAPSHOT, la bibliothèque des fichiers JSON du mod, avec tomlkt et json5, en jar-in-jar |
 | Côté | serveur dédié et solo |
-| Langage | Kotlin 2.4.20, Java 25 |
+| Langage | Kotlin 2.4.21, Java 25 |
 | Licence | LGPL-3.0-only, voir La licence |
 
 Les spécifications du mod vivent dans `01-docs\specs\` du classeur, hors du dépôt.
@@ -208,13 +208,12 @@ déclare les siens, dans son propre dossier `run/`.
 | `:mc-<lignée>:deployToPrism` | pousse le jar seul dans l'instance PrismLauncher de sa version, en 26.2 et en 26.3 |
 | `:<module>:listRepositories` | les dépôts de dépendances effectifs d'un module, ceux que Loom pose compris |
 
-**`machine.properties`, à créer sur chaque machine**, à la racine. Ce fichier n'est pas versionné, et le
-build s'en passe : sans lui, Outfitter dégrade les environnements et le dit. Il porte les chemins propres au
-poste, en barres obliques, et le joueur des runs client :
+L'entrepôt `C:\MC-Kit`, le même sur chaque poste, se déclare dans `gradle.properties` (`outfitter.profiles_dir`,
+`outfitter.maps_dir`), et `machine.properties` peut le surcharger par poste. **`machine.properties`, à créer sur
+chaque machine**, à la racine : ce fichier n'est pas versionné, et le build s'en passe. Il porte ce qui est
+propre à la personne, le joueur des runs client :
 
 ```properties
-outfitter.profiles_dir=C:/MC-Kit/00-favorites
-outfitter.maps_dir=C:/MC-Kit/01-maps
 outfitter.username=<ton pseudo>
 ```
 
