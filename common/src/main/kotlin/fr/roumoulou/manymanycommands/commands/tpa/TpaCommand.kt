@@ -9,13 +9,20 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import fr.roumoulou.manymanycommands.ModRuntime
+import fr.roumoulou.manymanycommands.game.teleport.Arrival
+import fr.roumoulou.manymanycommands.game.teleport.Location
+import fr.roumoulou.manymanycommands.game.teleport.TeleportListener
+import fr.roumoulou.manymanycommands.game.teleport.TeleportRequest
+import fr.roumoulou.manymanycommands.rules.back.BackSource
 import fr.roumoulou.manymanycommands.rules.common.CommonMessages
 import fr.roumoulou.manymanycommands.rules.data.PlayerEntry
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.permission.PermissionNode
+import fr.roumoulou.manymanycommands.rules.teleport.CancellationCause
 import fr.roumoulou.manymanycommands.rules.tpa.RequestKind
 import fr.roumoulou.manymanycommands.rules.tpa.TpaAnswer
 import fr.roumoulou.manymanycommands.rules.tpa.TpaHoldings
+import fr.roumoulou.manymanycommands.rules.tpa.TpaJourney
 import fr.roumoulou.manymanycommands.rules.tpa.TpaMessages
 import fr.roumoulou.manymanycommands.rules.tpa.TpaNodes
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRequest
@@ -34,7 +41,7 @@ import java.util.UUID
  *
  * Chaque commande relie : elle exige un joueur et des données disponibles, résout `<player>` parmi les joueurs connectés, applique la règle de
  * `TpaRequests`, et envoie par le `Messenger` les messages des deux joueurs. L'expiration et la déconnexion se constatent au tick du serveur,
- * par l'état (`ModRuntime.tickRequests`). L'acceptation ne lance pas encore le voyage.
+ * par l'état (`ModRuntime.tickRequests`). L'acceptation remet le voyage au déroulé commun, pour le voyageur.
  */
 class TpaCommand(private val runtime: ModRuntime) {
 
@@ -117,11 +124,53 @@ class TpaCommand(private val runtime: ModRuntime) {
         return Command.SINGLE_SUCCESS
     }
 
-    /** `/tpaaccept [<player>]` (chapitre 3.2) : la demande consommée, les deux joueurs prévenus. */
-    private fun accept(context: CommandContext<CommandSourceStack>, name: String?): Int = answer(context, name) { _, requester, recipient ->
+    /** `/tpaaccept [<player>]` (chapitre 3.2) : la demande consommée, les deux joueurs prévenus, puis le voyage. */
+    private fun accept(context: CommandContext<CommandSourceStack>, name: String?): Int = answer(context, name) { request, requester, recipient ->
         runtime.messenger.reply(context.source, TpaMessages.ACCEPTED_RECIPIENT.with(requester.scoreboardName))
         runtime.messenger.tell(requester, TpaMessages.ACCEPTED_REQUESTER.with(recipient.scoreboardName))
-        Command.SINGLE_SUCCESS
+        travel(request, requester, recipient)
+    }
+
+    /**
+     * Le voyage (chapitre 3.2) : le déroulé commun pour le voyageur, par sa source et son jeu de règles, vers la position de l'hôte à
+     * l'acceptation, la dimension de départ du voyageur en étape 1 et le quota compté au demandeur à l'arrivée. À l'arrivée, l'endroit quitté
+     * devient la position de retour du voyageur, sous la source `tpa`, et les deux joueurs l'apprennent. Ce qui refuse ou annule le voyage se
+     * dit à l'autre joueur, avec sa cause ; le voyageur, lui, le lit du déroulé.
+     *
+     * @return 1 quand le voyage est lancé ou fait, 0 quand le déroulé le refuse
+     */
+    private fun travel(request: TpaRequest, requester: ServerPlayer, recipient: ServerPlayer): Int {
+        val (traveler, host) = if (request.kind == RequestKind.TPA) requester to recipient else recipient to requester
+        val source = traveler.createCommandSourceStack()
+        val ruleSet = runtime.ruleSet(source, TpaRules)
+        val requesterSource = requester.createCommandSourceStack()
+        val charge = runtime.teleports.quotaCharge(requesterSource, requester, TpaRules, runtime.ruleSet(requesterSource, TpaRules))
+        val listener = object : TeleportListener {
+
+            override fun onArrived(from: Location, to: Location) {
+                runtime.recordReturn(traveler, BackSource.TPA, from)
+                runtime.messenger.tell(traveler, TpaMessages.ARRIVED_TRAVELER.with(host.scoreboardName))
+                tellIfConnected(host, TpaMessages.ARRIVED_HOST.with(traveler.scoreboardName))
+            }
+
+            override fun onCancelled(cause: CancellationCause) {
+                tellIfConnected(host, TpaJourney.notDone(traveler.scoreboardName, TpaJourney.cause(cause)))
+            }
+        }
+        val journey = TeleportRequest(
+            traveler, source, TpaRules, ruleSet, Arrival.At(Location.of(host)),
+            familyRefusal = { TpaJourney.departureRefusal(ruleSet, Location.of(traveler).dimension) },
+            quotaCharge = charge,
+            listener = listener,
+        )
+        val refusal = runtime.teleports.launch(journey) ?: return Command.SINGLE_SUCCESS
+        tellIfConnected(host, TpaJourney.notDone(traveler.scoreboardName, TpaJourney.cause(refusal)))
+        return 0
+    }
+
+    /** L'hôte peut être parti pendant le délai du voyageur : un joueur parti ne lit plus rien. */
+    private fun tellIfConnected(player: ServerPlayer, message: Message) {
+        if (!player.hasDisconnected()) runtime.messenger.tell(player, message)
     }
 
     /** `/tpadeny [<player>]` (chapitre 3.3) : la demande consommée, les deux joueurs prévenus. */
