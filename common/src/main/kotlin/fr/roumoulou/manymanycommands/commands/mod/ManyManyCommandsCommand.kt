@@ -18,6 +18,7 @@ import net.minecraft.commands.Commands
 class ManyManyCommandsCommand(private val runtime: ModRuntime) {
 
     companion object {
+
         const val NAME = "manymanycommands"
         const val ALIAS = "mmc"
     }

@@ -18,6 +18,8 @@ object HomesListing {
     fun teleportCommand(name: String): String = "/homes teleport $name"
 
     /**
+     * La liste des homes (`homes.md` des specs, chapitre 3.4) : l'en-tête, puis une ligne par home dans l'ordre de la liste, ou la liste vide.
+     *
      * @param max la limite de homes du joueur, celle de son jeu de règles
      */
     fun messages(homes: PlayerHomes, max: Long): List<Message> = buildList {

@@ -3,6 +3,7 @@
 
 package fr.roumoulou.manymanycommands.rules.wild
 
+import kotlin.math.abs
 import kotlin.random.Random
 
 /**
@@ -51,7 +52,7 @@ class WildZone(val centerX: Long, val centerZ: Long, val minDistance: Long, val 
     ).filterNot { it.isEmpty }
 
     /** La colonne est dans la couronne. */
-    operator fun contains(column: Column): Boolean = maxOf(kotlin.math.abs(column.x - centerX), kotlin.math.abs(column.z - centerZ)) in minDistance..maxDistance
+    operator fun contains(column: Column): Boolean = maxOf(abs(column.x - centerX), abs(column.z - centerZ)) in minDistance..maxDistance
 
     /** Ce que [border] laisse de la zone : ses bandes rognées, et rien quand la bordure exclut toute la zone. */
     fun within(border: Bounds): List<Bounds> = bands.map { it.intersect(border) }.filterNot { it.isEmpty }

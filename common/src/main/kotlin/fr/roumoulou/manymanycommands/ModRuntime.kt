@@ -52,6 +52,8 @@ import fr.roumoulou.manymanycommands.rules.wild.WildData
 import fr.roumoulou.manymanycommands.rules.wild.WildRules
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.server.level.ServerPlayer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.time.Clock
 import java.util.UUID
@@ -71,6 +73,8 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     companion object {
 
+        private val LOGGER: Logger = LoggerFactory.getLogger(MOD_ID)
+
         /**
          * Ouvre l'état du mod sur [configDirectory], le dossier du mod dans celui des configurations, et y lit les fichiers de réglages : un
          * fichier qui manque est créé, un fichier invalide laisse ses réglages livrés en place et se dit en erreur au journal.
@@ -83,6 +87,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
             ModRuntime(version, configDirectory, permissionSource, clock)
     }
 
+    // Les deux fichiers précèdent settingsFiles, qui les lit à son initialisation : l'ordre de déclaration est celui de l'initialisation.
     private val globalSettingsFile: SettingsFile<GlobalSettings> = GlobalSettingsFile.at(configDirectory)
 
     /** Le fichier de règles de chaque famille, par sa table. */
@@ -191,7 +196,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     }
 
     /** Le journal du serveur ne nomme pas ses loggers : chaque ligne dit de quel mod elle vient. */
-    private fun logError(message: Message) = ManyManyCommands.LOGGER.error("[ManyManyCommands] {}", messenger.forJournal(message))
+    private fun logError(message: Message) = LOGGER.error("[ManyManyCommands] {}", messenger.forJournal(message))
 
     /** Les fichiers de données d'un monde (cahier des charges, chapitre 2.7.1) : chaque famille y tient les siens, lus à l'ouverture. */
     class WorldData internal constructor(directory: Path) {

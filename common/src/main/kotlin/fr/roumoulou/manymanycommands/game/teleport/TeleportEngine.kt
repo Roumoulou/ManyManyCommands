@@ -3,7 +3,7 @@
 
 package fr.roumoulou.manymanycommands.game.teleport
 
-import fr.roumoulou.manymanycommands.ManyManyCommands
+import fr.roumoulou.manymanycommands.MOD_ID
 import fr.roumoulou.manymanycommands.game.message.Messenger
 import fr.roumoulou.manymanycommands.game.permission.Rights
 import fr.roumoulou.manymanycommands.rules.ruleset.QuotaClock
@@ -23,6 +23,8 @@ import fr.roumoulou.manymanycommands.rules.teleport.TeleportSteps
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.stats.Stats
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.Instant
 import java.util.UUID
@@ -43,6 +45,8 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
 
         /** Le jeu compte le temps de jeu d'un joueur en ticks. */
         const val TICKS_PER_SECOND = 20
+
+        val LOGGER: Logger = LoggerFactory.getLogger(MOD_ID)
     }
 
     /** Les téléportations en attente, une par joueur au plus, dans l'ordre de leur lancement. */
@@ -156,7 +160,7 @@ class TeleportEngine(private val messenger: Messenger, private val rights: Right
         journeys.remove(player.uuid)
         if (!Departures.leave(player, to)) {
             // Le jeu ne refuse de téléporter qu'un joueur déjà retiré du monde, que le tick annule avant d'en arriver ici.
-            ManyManyCommands.LOGGER.warn("The game refused to teleport {} to {} at {} {} {}", player.scoreboardName, to.dimension, to.x, to.y, to.z)
+            LOGGER.warn("[ManyManyCommands] The game refused to teleport {} to {} at {} {} {}", player.scoreboardName, to.dimension, to.x, to.y, to.z)
             return
         }
         cooldowns.start(player.uuid, request.table.family, now)

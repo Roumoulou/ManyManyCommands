@@ -40,7 +40,11 @@ class BackCommand(private val runtime: ModRuntime) {
         dispatcher.register(Commands.literal(NAME).requires(runtime.rights.requires(BackNodes.BACK)).executes(::back))
     }
 
-    /** @return 1 quand la téléportation est lancée ou faite, 0 pour un refus, de la famille ou du déroulé */
+    /**
+     * `/back` : la console refusée, les données disponibles, les refus propres du retour, puis la demande au déroulé commun.
+     *
+     * @return 1 quand la téléportation est lancée ou faite, 0 pour un refus, de la famille ou du déroulé
+     */
     private fun back(context: CommandContext<CommandSourceStack>): Int {
         val source = context.source
         val player = source.player ?: return refuse(source, CommonMessages.IN_GAME_ONLY.with())

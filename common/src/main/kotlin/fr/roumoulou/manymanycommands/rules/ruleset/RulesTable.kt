@@ -32,6 +32,7 @@ abstract class RulesTable(val family: String) {
         const val DEFAULT_SET = "default"
     }
 
+    // Les deux listes précèdent enabled, que setting() y range à son initialisation : l'ordre de déclaration est celui de l'initialisation.
     private val declaredSettings = mutableListOf<Rule<*, *>>()
 
     private val declaredRules = mutableListOf<Rule<*, *>>()

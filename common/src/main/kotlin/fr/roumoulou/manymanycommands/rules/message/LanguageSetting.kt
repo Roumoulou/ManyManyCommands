@@ -17,10 +17,18 @@ enum class LanguageSetting(val value: String) {
         fun of(value: String): LanguageSetting? = entries.firstOrNull { it.value == value }
     }
 
-    /** @param clientLanguage la langue que le client du joueur annonce, comme `fr_fr` ou `en_us` */
+    /**
+     * La langue d'un joueur : celle que le réglage impose, ou sous `auto` celle de son client, le français pour `fr_*` et l'anglais sinon.
+     *
+     * @param clientLanguage la langue que le client du joueur annonce, comme `fr_fr` ou `en_us`
+     */
     fun forPlayer(clientLanguage: String): Language = imposed() ?: if (clientLanguage.lowercase().startsWith("fr_")) Language.FRENCH else Language.ENGLISH
 
-    /** @param machineLanguage la langue de la machine, en code ISO 639 (`fr`, `en`) */
+    /**
+     * La langue de la console : celle que le réglage impose, ou sous `auto` celle de la machine, le français pour `fr` et l'anglais sinon.
+     *
+     * @param machineLanguage la langue de la machine, en code ISO 639 (`fr`, `en`)
+     */
     fun forConsole(machineLanguage: String): Language = imposed() ?: if (machineLanguage.lowercase() == "fr") Language.FRENCH else Language.ENGLISH
 
     private fun imposed(): Language? = when (this) {

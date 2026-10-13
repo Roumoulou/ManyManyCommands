@@ -18,6 +18,9 @@ object WarpsListing {
     fun teleportCommand(name: String): String = "/warps teleport $name"
 
     /**
+     * La liste des warps accessibles au lecteur (`warps.md` des specs, chapitre 2.2) : l'en-tête avec leur nombre, puis une ligne par warp dans
+     * l'ordre de la liste, ou la liste vide.
+     *
      * @param hasAccess le lecteur a le nœud d'une clé
      * @param showKeys le lecteur a le nœud de `restrict`
      */
