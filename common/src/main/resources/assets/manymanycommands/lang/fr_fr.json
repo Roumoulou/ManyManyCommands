@@ -36,6 +36,9 @@
   "manymanycommands.common.allowed.dimension": "l'identifiant d'une dimension, comme minecraft:the_nether",
   "manymanycommands.common.allowed.player_id": "l'UUID d'un joueur, comme 069a79f4-44e9-4726-a5be-fca90e38aaf5",
   "manymanycommands.common.allowed.utc_instant": "une date en UTC, comme 2026-10-05T12:00:00Z",
+  "manymanycommands.common.allowed.node": "un nœud du mod",
+  "manymanycommands.common.allowed.command_node": "un nœud du mod, hors jeu de règles",
+  "manymanycommands.common.allowed.node_absent_from_allow": "un nœud absent de allow",
   "manymanycommands.common.allowed.none": "aucune",
 
   "manymanycommands.common.teleport.pending": "Une téléportation est déjà en attente.",
@@ -172,5 +175,9 @@
   "manymanycommands.tpa.disconnected": "La demande est tombée : %s s'est déconnecté.",
   "manymanycommands.tpa.reception.closed": "Réception des demandes fermée.",
   "manymanycommands.tpa.reception.opened": "Réception des demandes ouverte.",
-  "manymanycommands.tpa.unavailable": "Les demandes de téléportation sont indisponibles : leur fichier de données est invalide."
+  "manymanycommands.tpa.unavailable": "Les demandes de téléportation sont indisponibles : leur fichier de données est invalide.",
+
+  "manymanycommands.groups.status.missing_group.one": "%s joueur est inscrit dans le groupe %s, absent des réglages : il suit default.",
+  "manymanycommands.groups.status.missing_group.many": "%s joueurs sont inscrits dans le groupe %s, absent des réglages : ils suivent default.",
+  "manymanycommands.groups.status.missing_rule_set": "Le groupe %s nomme le jeu %s, absent des règles de %s : il suit default."
 }

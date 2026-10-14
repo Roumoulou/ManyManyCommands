@@ -36,6 +36,9 @@
   "manymanycommands.common.allowed.dimension": "a dimension identifier, such as minecraft:the_nether",
   "manymanycommands.common.allowed.player_id": "a player UUID, such as 069a79f4-44e9-4726-a5be-fca90e38aaf5",
   "manymanycommands.common.allowed.utc_instant": "a UTC date, such as 2026-10-05T12:00:00Z",
+  "manymanycommands.common.allowed.node": "a node of the mod",
+  "manymanycommands.common.allowed.command_node": "a node of the mod, other than a rule set",
+  "manymanycommands.common.allowed.node_absent_from_allow": "a node absent from allow",
   "manymanycommands.common.allowed.none": "none",
 
   "manymanycommands.common.teleport.pending": "A teleport is already pending.",
@@ -172,5 +175,9 @@
   "manymanycommands.tpa.disconnected": "The request dropped: %s disconnected.",
   "manymanycommands.tpa.reception.closed": "Request reception closed.",
   "manymanycommands.tpa.reception.opened": "Request reception open.",
-  "manymanycommands.tpa.unavailable": "Teleport requests are unavailable: their data file is invalid."
+  "manymanycommands.tpa.unavailable": "Teleport requests are unavailable: their data file is invalid.",
+
+  "manymanycommands.groups.status.missing_group.one": "%s player is registered in the group %s, absent from the settings: they follow default.",
+  "manymanycommands.groups.status.missing_group.many": "%s players are registered in the group %s, absent from the settings: they follow default.",
+  "manymanycommands.groups.status.missing_rule_set": "The group %s names the rule set %s, absent from the %s rules: it follows default."
 }

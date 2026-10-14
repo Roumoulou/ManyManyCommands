@@ -5,6 +5,8 @@ package fr.roumoulou.manymanycommands
 
 import fr.roumoulou.manymanycommands.files.back.BackDataFile
 import fr.roumoulou.manymanycommands.files.back.BackRulesFile
+import fr.roumoulou.manymanycommands.files.groups.GroupsFile
+import fr.roumoulou.manymanycommands.files.groups.MembershipsDataFile
 import fr.roumoulou.manymanycommands.files.homes.HomesDataFile
 import fr.roumoulou.manymanycommands.files.homes.HomesRulesFile
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
@@ -17,6 +19,7 @@ import fr.roumoulou.manymanycommands.files.warps.WarpsRulesFile
 import fr.roumoulou.manymanycommands.files.wild.WildDataFile
 import fr.roumoulou.manymanycommands.files.wild.WildRulesFile
 import fr.roumoulou.manymanycommands.game.message.Messenger
+import fr.roumoulou.manymanycommands.game.permission.InternalPermissionSource
 import fr.roumoulou.manymanycommands.game.permission.PermissionSource
 import fr.roumoulou.manymanycommands.game.permission.Rights
 import fr.roumoulou.manymanycommands.game.teleport.Location
@@ -31,6 +34,9 @@ import fr.roumoulou.manymanycommands.rules.data.NoHoldings
 import fr.roumoulou.manymanycommands.rules.file.DataFile
 import fr.roumoulou.manymanycommands.rules.file.ModFile
 import fr.roumoulou.manymanycommands.rules.file.SettingsFile
+import fr.roumoulou.manymanycommands.rules.groups.Groups
+import fr.roumoulou.manymanycommands.rules.groups.GroupsReport
+import fr.roumoulou.manymanycommands.rules.groups.Memberships
 import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.homes.PlayerHomes
@@ -44,6 +50,7 @@ import fr.roumoulou.manymanycommands.rules.ruleset.FamilyRules
 import fr.roumoulou.manymanycommands.rules.ruleset.RuleValues
 import fr.roumoulou.manymanycommands.rules.ruleset.RulesTable
 import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
+import fr.roumoulou.manymanycommands.rules.settings.PermissionSourceSetting
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaLedger
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsage
 import fr.roumoulou.manymanycommands.rules.teleport.QuotaUsages
@@ -67,8 +74,8 @@ import java.time.Clock
 import java.util.UUID
 
 /**
- * L'état du mod pour un serveur : ses fichiers de réglages, ses fichiers de données, ceux du serveur et ceux de son monde, ses textes, l'envoi de
- * ses messages, ses droits, son horloge et ses téléportations.
+ * L'état du mod pour un serveur : ses fichiers de réglages, groupes compris, ses fichiers de données, ceux du serveur et ceux de son monde, ses
+ * textes, l'envoi de ses messages, ses droits, son horloge et ses téléportations.
  *
  * Il s'ouvre sur le dossier qu'on lui donne et ne lit aucun chemin de lui-même : le point d'entrée lui donne le dossier du serveur, un test le
  * sien. Le dossier du monde lui arrive de même, au démarrage du serveur ([openWorld]). Chaque commande reçoit son `ModRuntime` à
@@ -77,7 +84,7 @@ import java.util.UUID
  * @property clock l'heure réelle, pour tout ce qui mesure un temps. Une règle ne la lit jamais : elle reçoit l'instant, que le code de la couche
  * `game` prend ici. Un test y met une horloge qu'il tient, parce que le serveur GameTest tique sans cadence.
  */
-class ModRuntime private constructor(val version: String, configDirectory: Path, permissionSource: PermissionSource, val clock: Clock) {
+class ModRuntime private constructor(val version: String, configDirectory: Path, permissionSource: PermissionSource?, val clock: Clock) {
 
     companion object {
 
@@ -88,15 +95,18 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
          * fichier qui manque est créé, un fichier invalide laisse ses réglages livrés en place et se dit en erreur au journal.
          *
          * @param version la version du mod, celle que l'état affiche
-         * @param permissionSource la source des droits
+         * @param permissionSource la source des droits, ou `null` pour celle que choisit `permission-source` du démarrage : le système du mod
+         * sous `internal`, et une source muette sous `external`, tant que le module de permissions de la Fabric API n'est pas branché
          * @param clock l'horloge de l'état, celle de la machine par défaut
          */
-        fun start(configDirectory: Path, version: String, permissionSource: PermissionSource = PermissionSource.SILENT, clock: Clock = Clock.systemUTC()): ModRuntime =
+        fun start(configDirectory: Path, version: String, permissionSource: PermissionSource? = null, clock: Clock = Clock.systemUTC()): ModRuntime =
             ModRuntime(version, configDirectory, permissionSource, clock)
     }
 
-    // Les deux fichiers précèdent settingsFiles, qui les lit à son initialisation : l'ordre de déclaration est celui de l'initialisation.
+    // Les trois fichiers précèdent settingsFiles, qui les lit à son initialisation : l'ordre de déclaration est celui de l'initialisation.
     private val globalSettingsFile: SettingsFile<GlobalSettings> = GlobalSettingsFile.at(configDirectory)
+
+    private val groupsFile: SettingsFile<Groups> = GroupsFile.at(configDirectory)
 
     /** Le fichier de règles de chaque famille, par sa table. */
     private val rulesFiles: Map<RulesTable, SettingsFile<FamilyRules>> = linkedMapOf(
@@ -107,8 +117,8 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         TpaRules to TpaRulesFile.at(configDirectory),
     )
 
-    /** Les fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
-    val settingsFiles: List<SettingsFile<*>> = listOf(globalSettingsFile) + rulesFiles.values
+    /** Les fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent : `settings.json`, `groups.json`, puis les fichiers de règles. */
+    val settingsFiles: List<SettingsFile<*>> = listOf(globalSettingsFile, groupsFile) + rulesFiles.values
 
     /** Les fichiers de données du serveur, dans `data\` du dossier du mod (cahier des charges, chapitre 2.7.1) : ouverts avec l'état, parce que leur dossier est connu avant le monde. */
     val serverData = ServerData(configDirectory)
@@ -122,7 +132,8 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     val messenger = Messenger(TextCatalog.load(), language = { settings.language })
 
-    val rights = Rights(permissionSource)
+    /** Le contrôle des droits, sur la source qu'on a donnée, ou sur le système du mod, qui lit l'état au moment du verdict. */
+    val rights = Rights(permissionSource ?: InternalPermissionSource(active = { usesInternalRights }, groups = { groups }, memberships = { serverData.memberships.content }))
 
     /** Le déroulé des téléportations : celles en attente et les cooldowns, en mémoire, et les plages de quota, conservées dans les fichiers de données du monde. */
     val teleports = TeleportEngine(messenger, rights, clock, WorldQuotas())
@@ -147,6 +158,15 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     /** Les réglages globaux en vigueur, que le rechargement remplace. */
     val settings: GlobalSettings get() = globalSettingsFile.inForce
+
+    /** Les groupes en vigueur (`groups.md` des specs), que le rechargement remplace. */
+    val groups: Groups get() = groupsFile.inForce
+
+    /**
+     * Le système du mod est la source des droits (cahier des charges, chapitre 2.4.5) : `permission-source` vaut `internal` au démarrage. Sous
+     * `external`, les groupes et les permissions propres sont ignorés, et les commandes `group` et `permission` le disent.
+     */
+    val usesInternalRights: Boolean get() = startupSettings.permissionSource == PermissionSourceSetting.INTERNAL
 
     /** Les réglages livrés tiennent la place d'un fichier refusé au démarrage, qu'aucun rechargement n'a appliqué depuis. */
     val hasShippedSettingsInPlace: Boolean get() = settingsFiles.any { it.isShippedInPlace }
@@ -213,15 +233,18 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         }
     }
 
-    /** La réponse de `/manymanycommands`. */
-    fun status(): List<Message> = ModReports.status(version, startupSettings.permissionSource, files)
+    /** La réponse de `/manymanycommands` : la version, la source des droits, chaque fichier, puis ce qui manque aux groupes. */
+    fun status(): List<Message> = ModReports.status(version, startupSettings.permissionSource, files) + groupsReport()
 
-    /** Relit tous les fichiers, et rend la réponse de `/manymanycommands reload`. Pour les données, le fichier du disque fait foi. */
+    /** Relit tous les fichiers, et rend la réponse de `/manymanycommands reload`, ce qui manque aux groupes en dernier. Pour les données, le fichier du disque fait foi. */
     fun reload(): List<Message> {
         files.forEach { it.load() }
         val awaitingRestartInRules = rulesFiles.flatMap { (table, file) -> table.awaitingRestart(file.inForce, startupRules(table)).map { FileSetting(file.name, it) } }
-        return ModReports.reload(files, settings.awaitingRestart(startupSettings), awaitingRestartInRules)
+        return ModReports.reload(files, settings.awaitingRestart(startupSettings), awaitingRestartInRules) + groupsReport()
     }
+
+    /** Les groupes absents des réglages où des joueurs restent inscrits, et les jeux nommés absents des règles de leur famille (`groups.md` des specs, chapitre 6). */
+    private fun groupsReport(): List<Message> = GroupsReport.lines(groups, serverData.memberships.content) { family -> rulesFiles.entries.firstOrNull { it.key.family == family }?.value?.inForce?.sets?.keys.orEmpty() }
 
     /** À la connexion d'un joueur : les réglages invalides au démarrage s'annoncent à qui a le nœud `manymanycommands.status`. */
     fun greet(player: ServerPlayer) {
@@ -246,8 +269,11 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         /** `data\players.json` : le registre des joueurs. */
         val players: DataFile<PlayerRegistry> = PlayersDataFile.at(directory)
 
+        /** `data\memberships.json` : l'inscription et les permissions propres de chaque joueur. */
+        val memberships: DataFile<Memberships> = MembershipsDataFile.at(directory)
+
         /** Les fichiers de données du serveur, dans l'ordre où l'état et le rechargement les donnent, celui du cahier des charges. */
-        val files: List<DataFile<*>> = listOf(players)
+        val files: List<DataFile<*>> = listOf(players, memberships)
 
         init {
             files.forEach { it.load() }
