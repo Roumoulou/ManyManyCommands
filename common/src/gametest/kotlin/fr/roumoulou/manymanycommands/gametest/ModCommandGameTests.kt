@@ -36,7 +36,7 @@ class ModCommandGameTests {
 
     private companion object {
 
-        /** Tous les fichiers du mod : les six fichiers de réglages, puis les données du monde. */
+        /** Tous les fichiers du mod : les sept fichiers de réglages, les données du serveur, puis les données du monde. */
         val FILES = Harness.FILES
         val STATUS_KEYS = listOf(ModMessages.STATUS_VERSION.key, ModMessages.STATUS_SOURCE.key) + FILES.map { ModMessages.STATUS_FILE_VALID.key }
         val APPLIED_KEYS = FILES.map { ModMessages.RELOAD_FILE_APPLIED.key }
@@ -50,7 +50,7 @@ class ModCommandGameTests {
 
     // ── Sur le serveur lui-même : ses commandes, son état, son premier lancement ──
 
-    /** Le premier lancement du mod écrit ses six fichiers de réglages dans le dossier des configurations du serveur, et le serveur démarre sur les réglages livrés. */
+    /** Le premier lancement du mod écrit ses sept fichiers de réglages dans le dossier des configurations du serveur, et le serveur démarre sur les réglages livrés. */
     @GameTest
     fun firstLaunchWritesTheSettingsFiles(helper: GameTestHelper) {
         val runtime = Harness.serverRuntime(helper)
@@ -102,15 +102,15 @@ class ModCommandGameTests {
     }
 
     /**
-     * L'état et le rechargement donnent chaque fichier du mod : `settings.json`, puis les cinq fichiers de règles, chacun sous son chemin dans
-     * le dossier du mod, puis le registre des joueurs sous `data/`, puis les données du monde sous `world/`.
+     * L'état et le rechargement donnent chaque fichier du mod : `settings.json`, `groups.json`, puis les cinq fichiers de règles, chacun sous son
+     * chemin dans le dossier du mod, puis le registre des joueurs et les inscriptions sous `data/`, puis les données du monde sous `world/`.
      */
     @GameTest
     fun statusAndReloadGiveEveryFile(helper: GameTestHelper) {
         val runtime = Harness.serverRuntime(helper)
         val dispatcher = Harness.serverDispatcher(helper)
         val player = Harness.player(helper)
-        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "data/players.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
+        val names = listOf("settings.json", "groups.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "data/players.json", "data/memberships.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
 
         val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }

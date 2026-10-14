@@ -6,6 +6,9 @@ package fr.roumoulou.manymanycommands
 import fr.roumoulou.manymanycommands.rules.back.BackRules
 import fr.roumoulou.manymanycommands.rules.common.Position
 import fr.roumoulou.manymanycommands.rules.data.PlayerEntry
+import fr.roumoulou.manymanycommands.rules.groups.Groups
+import fr.roumoulou.manymanycommands.rules.groups.GroupsMessages
+import fr.roumoulou.manymanycommands.rules.groups.Memberships
 import fr.roumoulou.manymanycommands.rules.homes.HomesData
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.homes.PlayerHomes
@@ -41,9 +44,9 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages, le registre des joueurs et les cinq fichiers de données de son monde,
- * le fichier invalide au démarrage et au rechargement (cahier des charges, chapitre 2.7.3), et les réglages qui attendent le redémarrage
- * (`manymanycommands.md` des specs, chapitre 2).
+ * L'état du mod ouvert sur un dossier à lui : ses sept fichiers de réglages, les deux fichiers de données du serveur et les cinq fichiers de
+ * données de son monde, le fichier invalide au démarrage et au rechargement (cahier des charges, chapitre 2.7.3), les réglages qui attendent le
+ * redémarrage (`manymanycommands.md` des specs, chapitre 2), et ce que l'état dit des groupes.
  */
 class ModRuntimeTest {
 
@@ -51,11 +54,11 @@ class ModRuntimeTest {
 
         private const val VERSION = "0.0.0+test"
 
-        /** Les six fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
-        private val SETTINGS_FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
+        /** Les sept fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
+        private val SETTINGS_FILES = listOf("settings.json", "groups.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
 
         /** Les fichiers de données du serveur, ouverts avec l'état. */
-        private val SERVER_DATA_FILES = listOf("data/players.json")
+        private val SERVER_DATA_FILES = listOf("data/players.json", "data/memberships.json")
 
         /** Tous les fichiers : les réglages, les données du serveur, puis les données du monde. */
         private val FILES = SETTINGS_FILES + SERVER_DATA_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
@@ -63,6 +66,8 @@ class ModRuntimeTest {
         private val TABLES = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
 
         private val STEVE: UUID = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5")
+
+        private val ALEX: UUID = UUID.fromString("853c80ef-3c37-49fd-aa49-938b674adae6")
 
         @JvmStatic
         @BeforeAll
@@ -89,9 +94,10 @@ class ModRuntimeTest {
         directory.resolve("rules").createDirectories().resolve("$family.json").writeText(json)
     }
 
-    private fun writePlayers(json: String) {
-        playersPath.parent.createDirectories()
-        playersPath.writeText(json)
+    private fun writePlayers(json: String) = writeServerData("players", json)
+
+    private fun writeServerData(name: String, json: String) {
+        directory.resolve("data").createDirectories().resolve("$name.json").writeText(json)
     }
 
     private fun writeHomes(json: String) {
@@ -107,10 +113,13 @@ class ModRuntimeTest {
     // ── L'ouverture ──
 
     @Test
-    fun `l'ouverture crée les six fichiers de réglages et le registre, et applique les réglages livrés`() {
+    fun `l'ouverture crée les sept fichiers de réglages et les deux fichiers de données du serveur, et applique les réglages livrés`() {
         val runtime = start()
 
         (SETTINGS_FILES + SERVER_DATA_FILES).forEach { assertTrue(directory.resolve(it).exists(), "$it must be created") }
+        assertEquals(Groups.SHIPPED, runtime.groups)
+        assertEquals(Memberships(), runtime.serverData.memberships.content)
+        assertTrue(runtime.usesInternalRights, "The mod's own system is the permission source by default")
         assertEquals(SETTINGS_FILES, runtime.settingsFiles.map { it.name })
         assertEquals(GlobalSettings(), runtime.settings)
         assertEquals(GlobalSettings(), runtime.startupSettings)
@@ -136,15 +145,48 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'état donne la version, la source des droits et les douze fichiers, le registre après les réglages et les données du monde en dernier`() {
+    fun `l'état donne la version, la source des droits et les quatorze fichiers, les données du serveur après les réglages et celles du monde en dernier`() {
         val expected = listOf(ModMessages.STATUS_VERSION.with(VERSION), ModMessages.STATUS_SOURCE.with("internal")) + FILES.map { ModMessages.STATUS_FILE_VALID.with(it) }
 
         assertEquals(expected, start().status())
     }
 
     @Test
-    fun `le rechargement donne une ligne par fichier, les douze appliqués`() {
+    fun `le rechargement donne une ligne par fichier, les quatorze appliqués`() {
         assertEquals(FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, start().reload())
+    }
+
+    // ── Les groupes ──
+
+    @Test
+    fun `l'état et le rechargement disent le groupe absent des réglages où des joueurs restent inscrits, puis le jeu nommé absent des règles`() {
+        directory.resolve("groups.json").writeText("""{ "groups": { "vip": { "rules": { "homes": "vip", "wild": "vip" } } } }""")
+        writeServerData("memberships", """{ "players": { "$STEVE": { "name": "Steve", "group": "ghost" }, "$ALEX": { "name": "Alex", "group": "ghost" } } }""")
+        writeRules("wild", """{ "rules": { "vip": { "cooldown": 1 } } }""")
+        val runtime = start()
+
+        val expected = listOf(GroupsMessages.STATUS_MISSING_GROUP_MANY.with(2, "ghost"), GroupsMessages.STATUS_MISSING_RULE_SET.with("vip", "vip", "homes"))
+        assertEquals(expected, runtime.status().drop(2 + FILES.size))
+        assertEquals(expected, runtime.reload().drop(FILES.size))
+
+        writeRules("homes", """{ "rules": { "vip": { "max-homes": 10 } } }""")
+        writeServerData("memberships", """{ "players": { "$STEVE": { "name": "Steve", "group": "ghost" } } }""")
+        assertEquals(listOf(GroupsMessages.STATUS_MISSING_GROUP_ONE.with(1, "ghost")), runtime.reload().drop(FILES.size))
+        assertEquals(listOf("vip", "default"), runtime.groups.names, "The default group exists even when the file does not write it, after the written ones")
+    }
+
+    @Test
+    fun `des inscriptions invalides ne disent rien des groupes, et le système du mod n'est la source des droits que sous internal`() {
+        directory.resolve("groups.json").writeText("""{ "groups": { "default": {}, "vip": { "rules": { "homes": "vip" } } } }""")
+        writeServerData("memberships", "{\n  \"players\": {\n    \"Steve\": {}\n  }\n}")
+        settingsPath.writeText("""{ "permission-source": "external" }""")
+
+        val runtime = start()
+
+        assertFalse(runtime.serverData.memberships.isAvailable)
+        assertEquals(ModMessages.STATUS_FILE_REFUSED.with("data/memberships.json"), statusOf(runtime, "data/memberships.json"))
+        assertEquals(listOf(GroupsMessages.STATUS_MISSING_RULE_SET.with("vip", "vip", "homes")), runtime.status().drop(2 + FILES.size), "Only the groups file speaks while the memberships are unavailable")
+        assertFalse(runtime.usesInternalRights, "Under external, the mod's own system is not the permission source")
     }
 
     // ── Le registre des joueurs ──

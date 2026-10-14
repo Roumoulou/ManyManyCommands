@@ -12,6 +12,8 @@ import fr.roumoulou.manymanycommands.commands.ModCommands
 import fr.roumoulou.manymanycommands.game.permission.PermissionSource
 import fr.roumoulou.manymanycommands.rules.back.BackRules
 import fr.roumoulou.manymanycommands.rules.data.DataRules
+import fr.roumoulou.manymanycommands.rules.groups.GroupsRules
+import fr.roumoulou.manymanycommands.rules.groups.MembershipsRules
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.players.PlayerRegistryRules
@@ -54,11 +56,11 @@ object Harness {
     /** Les tables des cinq fichiers de règles, dans l'ordre où l'état et le rechargement les donnent. */
     val RULES_TABLES: List<RulesTable> = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
 
-    /** Les six fichiers de réglages, par le nom que les messages leur donnent : `settings.json`, puis les cinq fichiers de règles. */
-    val SETTINGS_FILES: List<String> = listOf(GlobalSettings.FILE_NAME) + RULES_TABLES.map { it.fileName }
+    /** Les sept fichiers de réglages, par le nom que les messages leur donnent : `settings.json`, `groups.json`, puis les cinq fichiers de règles. */
+    val SETTINGS_FILES: List<String> = listOf(GlobalSettings.FILE_NAME, GroupsRules.FILE_NAME) + RULES_TABLES.map { it.fileName }
 
-    /** Les fichiers de données du serveur, sous `data/`, par le nom que les messages leur donnent : le registre des joueurs. */
-    val SERVER_DATA_FILES: List<String> = listOf(PlayerRegistryRules.fileName)
+    /** Les fichiers de données du serveur, sous `data/`, par le nom que les messages leur donnent : le registre des joueurs, puis les inscriptions. */
+    val SERVER_DATA_FILES: List<String> = listOf(PlayerRegistryRules.fileName, MembershipsRules.fileName)
 
     /** Les fichiers de données du monde, par le nom que les messages leur donnent, dans l'ordre où l'état et le rechargement les donnent. */
     val DATA_FILES: List<String> = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules).map { DataRules.fileName(it.family) }
@@ -161,10 +163,10 @@ object Harness {
 
     /**
      * Un état du mod propre à un test, avec ses commandes et son monde : ouvert sur un dossier à lui, sous le dossier des configurations du
-     * serveur, que chaque run remet à neuf. Ses fichiers de données vivent dans `world\` de ce dossier, ouvert comme le fait le démarrage du
-     * serveur.
+     * serveur, que chaque run remet à neuf. Ses fichiers de données du serveur vivent dans `data\` de ce dossier, ceux du monde dans `world\`,
+     * ouvert comme le fait le démarrage du serveur.
      */
-    class Lab private constructor(val directory: Path, permissionSource: PermissionSource, clock: Clock) {
+    class Lab private constructor(val directory: Path, permissionSource: PermissionSource?, clock: Clock) {
 
         companion object {
 
@@ -173,34 +175,43 @@ object Harness {
              *
              * @param name le nom du dossier, propre au test
              * @param settings le contenu de `settings.json` avant l'ouverture, `null` pour laisser le mod le créer
+             * @param groups le contenu de `groups.json` avant l'ouverture, `null` pour laisser le mod le créer
              * @param rules le contenu des fichiers de règles avant l'ouverture, par leur table : le mod crée ceux qui manquent
-             * @param data le contenu des fichiers de données avant l'ouverture, par leur famille : le mod crée vides ceux qui manquent
+             * @param data le contenu des fichiers de données du monde avant l'ouverture, par leur famille : le mod crée vides ceux qui manquent
+             * @param serverData le contenu des fichiers de données du serveur avant l'ouverture, par leur nom dans `data\` : le mod crée vides ceux qui manquent
+             * @param permissionSource la source des droits, `null` pour celle que l'état choisit sur `permission-source`, le système du mod par défaut
              * @param clock l'horloge de l'état, celle de la machine quand le test ne mesure aucun temps
              */
             @OptIn(ExperimentalPathApi::class)
             fun open(
                 name: String,
                 settings: String? = null,
+                groups: String? = null,
                 rules: Map<RulesTable, String> = emptyMap(),
                 data: Map<String, String> = emptyMap(),
-                permissionSource: PermissionSource = PermissionSource.SILENT,
+                serverData: Map<String, String> = emptyMap(),
+                permissionSource: PermissionSource? = null,
                 clock: Clock = Clock.systemUTC(),
             ): Lab {
                 val directory = directory(name)
                 directory.deleteRecursively()
                 directory.createDirectories()
                 if (settings != null) directory.resolve(GlobalSettings.FILE_NAME).writeText(settings)
+                if (groups != null) directory.resolve(GroupsRules.FILE_NAME).writeText(groups)
                 rules.forEach { (table, json) -> write(directory.resolve(table.fileName), json) }
                 data.forEach { (family, json) -> write(worldDirectory(directory).resolve("$family.json"), json) }
+                serverData.forEach { (name, json) -> write(serverDataDirectory(directory).resolve("$name.json"), json) }
                 return Lab(directory, permissionSource, clock)
             }
 
             /** Rouvre un état sur le dossier qu'un `open` du même [name] a laissé, fichiers compris, comme le fait un redémarrage du serveur. */
-            fun reopen(name: String, permissionSource: PermissionSource = PermissionSource.SILENT, clock: Clock = Clock.systemUTC()): Lab = Lab(directory(name), permissionSource, clock)
+            fun reopen(name: String, permissionSource: PermissionSource? = null, clock: Clock = Clock.systemUTC()): Lab = Lab(directory(name), permissionSource, clock)
 
             private fun directory(name: String): Path = FabricLoader.getInstance().configDir.resolve("manymanycommands-gametest").resolve(name)
 
             private fun worldDirectory(directory: Path): Path = directory.resolve("world")
+
+            private fun serverDataDirectory(directory: Path): Path = directory.resolve(DataRules.SERVER_DATA_DIRECTORY)
 
             private fun write(file: Path, json: String) {
                 file.parent.createDirectories()
@@ -218,10 +229,15 @@ object Harness {
 
         fun writeSettings(json: String) = directory.resolve(GlobalSettings.FILE_NAME).writeText(json)
 
+        fun writeGroups(json: String) = directory.resolve(GroupsRules.FILE_NAME).writeText(json)
+
         /** Réécrit le fichier de règles de [table]. */
         fun writeRules(table: RulesTable, json: String) = write(directory.resolve(table.fileName), json)
 
         /** Réécrit le fichier de données de [family], dans le monde de cet état. */
         fun writeData(family: String, json: String) = write(worldDirectory(directory).resolve("$family.json"), json)
+
+        /** Réécrit le fichier de données du serveur [name], dans `data\` de cet état. */
+        fun writeServerData(name: String, json: String) = write(serverDataDirectory(directory).resolve("$name.json"), json)
     }
 }
