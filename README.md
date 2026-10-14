@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; la branche `/homes player` n'a pas ses commandes |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`) et le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds ; les commandes `group` et `permission` et la branche `/homes player` n'ont pas leurs commandes |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
@@ -23,8 +23,8 @@ Les spécifications du mod vivent dans `01-docs\specs\` du classeur, hors du dé
 
 | Commande | Ce qu'elle fait |
 |---|---|
-| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les six fichiers de réglages, le registre des joueurs (`data/players.json`) puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`, `world/wild.json`, `world/tpa.json`), valide ou refusé |
-| `/manymanycommands reload` | relit les fichiers du mod, réglages et données : une ligne par fichier, appliqué, ou refusé avec ses constats, puis les réglages qui attendent le redémarrage |
+| `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les sept fichiers de réglages, le registre des joueurs et les inscriptions (`data/players.json`, `data/memberships.json`) puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`, `world/wild.json`, `world/tpa.json`), valide ou refusé, puis ce qui manque aux groupes |
+| `/manymanycommands reload` | relit les fichiers du mod, réglages et données : une ligne par fichier, appliqué, ou refusé avec ses constats, puis les réglages qui attendent le redémarrage, puis ce qui manque aux groupes |
 | `/mmc` | alias de `/manymanycommands` et de ses sous-commandes |
 
 Les trois sont réservées aux maîtres du jeu (le niveau de `/tp`) et s'exécutent depuis la console. Sans ce
@@ -96,7 +96,9 @@ pour tout le mod :
 | `permission-source` | `internal` | `internal`, `external` | au redémarrage du serveur |
 | `mmc-alias` | `true` | `true`, `false` | au redémarrage du serveur |
 
-`permission-source` se lit et se valide sans effet : seuls les droits par défaut existent.
+`permission-source` choisit d'où viennent les droits des joueurs : `internal`, le système du mod, décrit
+plus bas avec `groups.json`, ou `external`, un mod de permissions par le module de permissions de la
+Fabric API, qui n'est pas encore branché : sous `external`, seuls les droits par défaut existent.
 
 `rules/` porte un fichier de règles par famille qui téléporte : ses réglages du serveur, puis ses jeux de
 règles sous `rules`.
@@ -115,6 +117,29 @@ le premier dans l'ordre du fichier. `enabled` et `aliases` prennent effet au red
 le reste au rechargement. Les valeurs livrées et les valeurs admises de chaque clé sont dans la fiche de
 sa famille, dans les spécifications.
 
+Sous le système du mod, c'est le groupe d'un joueur qui lui donne son jeu et ses nœuds. `groups.json`
+définit les groupes : chaque groupe nomme le jeu qu'il prend dans chaque famille (`rules`), et les nœuds
+qu'il accorde (`allow`) et retire (`deny`), une commande, une dispense ou la clé d'accès d'un warp, jamais
+un jeu de règles. Le groupe `default` existe toujours.
+
+```json
+{
+  "schema-version": 1,
+  "groups": {
+    "default": {},
+    "vip": { "rules": { "homes": "vip", "wild": "vip" }, "allow": ["manymanycommands.warps.access.vip"], "deny": [] }
+  }
+}
+```
+
+`data/memberships.json` inscrit chaque joueur dans son groupe (`group`) et porte ses permissions propres
+(`allow`, `deny`), qui l'emportent sur le groupe : un nœud `manymanycommands.rules.<famille>.<nom>` accordé
+en propre donne ce jeu à la place de celui du groupe. Un joueur inscrit nulle part, ou dans un groupe absent
+de `groups.json`, suit `default`, ce que `/manymanycommands` et `reload` disent, comme un jeu nommé que le
+fichier de règles de sa famille ne porte pas. Des inscriptions invalides font de tout joueur un membre de
+`default`, sans permission propre. Les inscriptions s'écrivent à la main tant que les commandes `group` et
+`permission` n'existent pas ; un nœud inconnu du mod y rend le fichier invalide.
+
 Les cinq familles lisent leurs règles ; les demandes y prennent la durée de vie et l'intervalle d'une demande,
 et le voyageur le délai, le cooldown et les dimensions de départ de son propre jeu, le quota étant celui du
 demandeur. Le déroulé d'une téléportation, que `/homes teleport`, `/warps teleport`, `/back`, `/wild` et
@@ -123,7 +148,7 @@ refus dans leur ordre, le délai d'immobilité et son compte à rebours dans la 
 quand le joueur bouge, est blessé, meurt, change de dimension ou se déconnecte, le cooldown par famille, le
 quota, et le refus d'une arrivée dangereuse.
 
-Dans les six fichiers de réglages comme dans les fichiers de données, le JSON est strict, et une clé inconnue
+Dans les sept fichiers de réglages comme dans les fichiers de données, le JSON est strict, et une clé inconnue
 refuse le fichier. Un fichier de réglages refusé au démarrage laisse la place à ses réglages livrés, ce que le
 journal dit en erreur ; refusé au rechargement, il laisse ses réglages en vigueur. Chaque fichier se juge
 seul : un fichier refusé n'empêche pas les autres de s'appliquer.
@@ -183,9 +208,9 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 359 tests |
-| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 143 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 118 gametests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 384 tests |
+| 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 153 tests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 123 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
