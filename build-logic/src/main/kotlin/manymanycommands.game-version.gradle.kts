@@ -594,7 +594,8 @@ publishing {
  *  Java 25, à CurseForge : le plugin le traduit en étiquette « Java 25 », que
  *  CurseForge n'a peut-être pas encore, et l'envoi réel échouerait là où l'essai à
  *  blanc ne voit rien. Le jar exige déjà Java 25, par fabric.mod.json. Le jar de
- *  sources part sur Modrinth seulement.
+ *  sources, nulle part : Modrinth refuse un jar de sources sans fichier .java, et
+ *  le mod est tout en Kotlin ; les sources sont sur GitHub.
  * ════════════════════════════════════════════════════════════════════════════════
  */
 val publishLive: Boolean = providers.gradleProperty("publish_live").map(String::toBoolean).getOrElse(false)
@@ -627,7 +628,6 @@ publishMods {
         // Le serveur porte le mod, un joueur n'a rien à installer pour le rejoindre ; en solo, le client le porte lui-même.
         environment = SERVER_ONLY_CLIENT_OPTIONAL
         requires("fabric-api", "fabric-language-kotlin")
-        additionalFile(tasks.named("sourcesJar")) { type = SOURCES_JAR }
     }
 
     curseforge {
