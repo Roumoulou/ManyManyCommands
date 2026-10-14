@@ -19,6 +19,8 @@ import fr.roumoulou.manymanycommands.files.warps.WarpsRulesFile
 import fr.roumoulou.manymanycommands.files.wild.WildDataFile
 import fr.roumoulou.manymanycommands.files.wild.WildRulesFile
 import fr.roumoulou.manymanycommands.game.message.Messenger
+import fr.roumoulou.manymanycommands.game.permission.ConfiguredPermissionSource
+import fr.roumoulou.manymanycommands.game.permission.ExternalPermissionSource
 import fr.roumoulou.manymanycommands.game.permission.InternalPermissionSource
 import fr.roumoulou.manymanycommands.game.permission.PermissionSource
 import fr.roumoulou.manymanycommands.game.permission.Rights
@@ -99,7 +101,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
          *
          * @param version la version du mod, celle que l'état affiche
          * @param permissionSource la source des droits, ou `null` pour celle que choisit `permission-source` du démarrage : le système du mod
-         * sous `internal`, et une source muette sous `external`, tant que le module de permissions de la Fabric API n'est pas branché
+         * sous `internal`, le module de permissions de la Fabric API sous `external`
          * @param clock l'horloge de l'état, celle de la machine par défaut
          */
         fun start(configDirectory: Path, version: String, permissionSource: PermissionSource? = null, clock: Clock = Clock.systemUTC()): ModRuntime =
@@ -135,8 +137,8 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     val messenger = Messenger(TextCatalog.load(), language = { settings.language })
 
-    /** Le contrôle des droits, sur la source qu'on a donnée, ou sur le système du mod, qui lit l'état au moment du verdict. */
-    val rights = Rights(permissionSource ?: InternalPermissionSource(active = { usesInternalRights }, groups = { groups }, memberships = { serverData.memberships.content }))
+    /** Le contrôle des droits, sur la source qu'on a donnée, ou sur celle que choisit `permission-source` du démarrage, lu au moment du verdict : le système du mod, ou un mod de permissions. */
+    val rights = Rights(permissionSource ?: ConfiguredPermissionSource({ usesInternalRights }, InternalPermissionSource(groups = { groups }, memberships = { serverData.memberships.content }), ExternalPermissionSource))
 
     /** Le déroulé des téléportations : celles en attente et les cooldowns, en mémoire, et les plages de quota, conservées dans les fichiers de données du monde. */
     val teleports = TeleportEngine(messenger, rights, clock, WorldQuotas())
