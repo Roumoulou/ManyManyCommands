@@ -18,6 +18,7 @@ class NodeCatalogTest {
     @Test
     fun `un nœud de commande ou de dispense se retrouve par son nom, et un nom inconnu ne donne rien`() {
         assertEquals(HomesNodes.CREATE, NodeCatalog.parse("manymanycommands.homes.create"))
+        assertEquals(HomesNodes.PLAYER_TELEPORT_OTHERS, NodeCatalog.parse("manymanycommands.homes.player.teleport.others"))
         assertEquals(GroupsNodes.GROUP_SET, NodeCatalog.parse("manymanycommands.group.set"))
         assertEquals(BypassNodes.COOLDOWN, NodeCatalog.parse("manymanycommands.bypass.cooldown"))
         assertNull(NodeCatalog.parse("manymanycommands.homes.fly"))

@@ -48,4 +48,14 @@ class HomesListingTest {
 
         assertEquals(HomesMessages.LIST_DEFAULT_HOME.key, messages[1].key)
     }
+
+    @Test
+    fun `la liste d'un joueur nommé donne son en-tête sans limite, et chaque home se clique pour la commande de la branche`() {
+        val messages = HomesListing.messagesOf("Steve", PlayerHomes(mapOf("base" to overworld, "mine" to nether), designated = "mine"))
+
+        assertEquals(HomesMessages.LIST_HEADER_OF_PLAYER.with("Steve", 2), messages[0])
+        assertEquals(listOf(HomesMessages.LIST_HOME.key, HomesMessages.LIST_DEFAULT_HOME.key), messages.drop(1).map { it.key })
+        assertEquals(Interaction("/homes player Steve teleport base", HomesMessages.LIST_POSITION.with("minecraft:overworld", 12, 64, -4)), messages[1].interaction)
+        assertEquals(listOf(HomesMessages.LIST_HEADER_OF_PLAYER.with("Steve", 0), HomesMessages.LIST_EMPTY.with()), HomesListing.messagesOf("Steve", PlayerHomes()))
+    }
 }

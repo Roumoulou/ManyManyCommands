@@ -22,4 +22,13 @@ class HomesNodesTest {
     fun `homes sans sous-commande prend le nœud de list`() {
         assertEquals("manymanycommands.homes.list", HomesNodes.LIST.name)
     }
+
+    @Test
+    fun `la branche player a un nœud par commande, l'envoi sous teleport others, que l'administrateur reçoit par défaut`() {
+        val names = listOf("create", "teleport", "teleport.others", "delete", "list", "rename", "move", "default").map { "manymanycommands.homes.player.$it" }
+
+        assertEquals(names, HomesNodes.PLAYER_BRANCH.map { it.name })
+        assertEquals(setOf(Profile.ADMINISTRATOR), HomesNodes.PLAYER_BRANCH.map { it.defaultProfile }.toSet())
+        assertEquals(HomesNodes.PLAYER_COMMANDS + HomesNodes.PLAYER_BRANCH, HomesNodes.ALL)
+    }
 }

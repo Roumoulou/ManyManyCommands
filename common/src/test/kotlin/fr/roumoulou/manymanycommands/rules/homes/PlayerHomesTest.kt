@@ -217,4 +217,47 @@ class PlayerHomesTest {
 
         assertEquals(listOf("atelier", "Base", "base", "ferme", "Zoo"), homes.sortedNames())
     }
+
+    // ── La branche player (chapitre 4) ──
+
+    private val administrator = HomesActor.Administrator("Steve")
+
+    @Test
+    fun `l'administrateur crée sans la dimension interdite ni la limite, garde le nom et l'unicité, et le placement se refuse en dernier`() {
+        val homes = PlayerHomes(mapOf("base" to overworld))
+        val strict = rules(maxHomes = 1, forbidden = listOf("minecraft:the_nether"))
+
+        assertEquals(CommonMessages.NAME_INVALID.with(), refused(homes.create("ba se", nether, strict, administrator)))
+        assertEquals(HomesMessages.ALREADY_EXISTS.with("base"), refused(homes.create("base", nether, strict, administrator)))
+        assertEquals(CommonMessages.PLACEMENT_OUT_OF_BOUNDS.with(), refused(homes.create("mine", nether, strict, administrator) { false }))
+        val change = applied(homes.create("mine", nether, strict, administrator))
+        assertEquals(HomesMessages.CREATED_OF_PLAYER.with("mine", "Steve", "minecraft:the_nether", 0, 70, 0), change.message)
+        assertEquals(setOf("base", "mine"), change.homes.homes.keys)
+    }
+
+    @Test
+    fun `l'administrateur rejoint sans la dimension de départ interdite, et garde le home absent, la dimension introuvable et le quota`() {
+        val homes = PlayerHomes(mapOf("base" to overworld, "moon" to Position("mymod:moon", 0.0, 64.0, 0.0, 0f, 0f)))
+        val forbidden = rules(forbiddenDeparture = listOf("minecraft:overworld"))
+        val known: (String) -> Boolean = { it != "mymod:moon" }
+
+        assertEquals(HomesMessages.DEPARTURE_FORBIDDEN.with("minecraft:overworld"), refused(teleport(homes, "base", forbidden)))
+        assertEquals(HomesTeleport.Target("base", overworld), homes.teleport("base", "minecraft:overworld", forbidden, known, null, administrator) { 0 })
+        assertEquals(HomesMessages.ABSENT.with("nowhere"), refused(homes.teleport("nowhere", "minecraft:overworld", forbidden, known, null, administrator) { 0 }))
+        assertEquals(HomesMessages.DIMENSION_MISSING.with("mymod:moon", "moon"), refused(homes.teleport("moon", "minecraft:overworld", forbidden, known, null, administrator) { 0 }))
+        assertEquals(HomesMessages.QUOTA_REACHED_ONE.with(1L, DurationWording.text(30)), refused(homes.teleport("base", "minecraft:overworld", forbidden, known, Quota(1, 60), administrator) { 30 }))
+    }
+
+    @Test
+    fun `pour l'administrateur, chaque succès nomme le propriétaire, et le déplacement passe outre la dimension interdite`() {
+        val homes = PlayerHomes(mapOf("base" to overworld, "mine" to overworld), designated = "base")
+        val strict = rules(forbidden = listOf("minecraft:the_nether"))
+
+        assertEquals(HomesMessages.DELETED_OF_PLAYER.with("base", "Steve", "minecraft:overworld", 12, 64, -4), applied(homes.delete("base", administrator)).message)
+        assertEquals(HomesMessages.RENAMED_OF_PLAYER.with("base", "Steve", "camp"), applied(homes.rename("base", "camp", administrator)).message)
+        assertEquals(HomesMessages.MOVED_OF_PLAYER.with("base", "Steve", "minecraft:the_nether", 0, 70, 0), applied(homes.move("base", nether, strict, administrator)).message)
+        assertEquals(CommonMessages.PLACEMENT_OUT_OF_BOUNDS.with(), refused(homes.move("base", nether, strict, administrator) { false }))
+        assertEquals(HomesMessages.DEFAULT_SET_OF_PLAYER.with("Steve", "mine"), applied(homes.designate("mine", administrator)).message)
+        assertEquals(HomesMessages.ABSENT.with("nowhere"), refused(homes.delete("nowhere", administrator)))
+    }
 }

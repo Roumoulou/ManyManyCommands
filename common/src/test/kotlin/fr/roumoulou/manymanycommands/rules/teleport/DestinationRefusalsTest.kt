@@ -50,6 +50,12 @@ class DestinationRefusalsTest {
     }
 
     @Test
+    fun `sans dimension de départ à contrôler, la dimension interdite ne refuse pas, et le reste se juge`() {
+        assertNull(DestinationRefusals.first(HomesRules, noDeparture, departure = null, destination = "minecraft:the_nether", isDimensionKnown = { true }, quota = null, quotaWaitSeconds = { 0 }, texts = texts))
+        assertEquals(text("missing", "mymod:moon"), DestinationRefusals.first(HomesRules, noDeparture, null, "mymod:moon", { false }, null, { 0 }, texts))
+    }
+
+    @Test
     fun `l'attente ne se consulte que quand le joueur a un quota`() {
         assertNull(DestinationRefusals.first(HomesRules, HomesRules.shipped.default, "minecraft:overworld", "minecraft:the_nether", { true }, quota = null, quotaWaitSeconds = { error("No quota, no wait to measure") }, texts = texts))
     }

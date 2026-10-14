@@ -17,6 +17,7 @@
       "fr.roumoulou.manymanycommands.gametest.GroupsCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.HomesCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.HomesTeleportGameTests",
+      "fr.roumoulou.manymanycommands.gametest.HomesPlayerGameTests",
       "fr.roumoulou.manymanycommands.gametest.WarpsCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.WarpsTeleportGameTests",
       "fr.roumoulou.manymanycommands.gametest.BackCommandGameTests",
