@@ -7,7 +7,7 @@ import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.message.MessageFamily
 import fr.roumoulou.manymanycommands.rules.message.TranslatableText
 
-/** Les messages de `homes.md` des specs (chapitre 7), hors ceux de la branche `player`. */
+/** Les messages de `homes.md` des specs (chapitre 7), la branche `player` comprise. */
 object HomesMessages : MessageFamily("homes") {
 
     // La création (chapitre 3.1). Le nom invalide est celui de la règle commune.
@@ -44,6 +44,19 @@ object HomesMessages : MessageFamily("homes") {
 
     val DEFAULT_SET = success("default_set")
 
+    // La branche player (chapitre 4) : chaque succès nomme aussi le propriétaire, l'en-tête de sa liste, l'envoi chez l'administrateur et chez le joueur envoyé, le joueur inconnu.
+    val CREATED_OF_PLAYER = success("player.created")
+    val ARRIVED_OF_PLAYER = success("player.arrived")
+    val SENT_ONE = success("player.sent.one")
+    val SENT_MANY = success("player.sent.many")
+    val SENT_TO = display("player.sent_to")
+    val DELETED_OF_PLAYER = success("player.deleted")
+    val LIST_HEADER_OF_PLAYER = display("player.list.header")
+    val RENAMED_OF_PLAYER = success("player.renamed")
+    val MOVED_OF_PLAYER = success("player.moved")
+    val DEFAULT_SET_OF_PLAYER = success("player.default_set")
+    val UNKNOWN_PLAYER = refusal("player.unknown")
+
     /** Le fichier de données est invalide (cahier des charges, chapitre 2.7.3). */
     val UNAVAILABLE = refusal("unavailable")
 
@@ -52,4 +65,7 @@ object HomesMessages : MessageFamily("homes") {
 
     /** Le quota atteint : le nombre d'usages, une quantité, et ce qui reste à attendre, une durée. */
     fun quotaReached(uses: Long, wait: TranslatableText): Message = (if (uses == 1L) QUOTA_REACHED_ONE else QUOTA_REACHED_MANY).with(uses, wait)
+
+    /** Les joueurs envoyés au home [name] de [owner], chez l'administrateur : une quantité. */
+    fun sent(count: Int, name: String, owner: String): Message = (if (count == 1) SENT_ONE else SENT_MANY).with(count, name, owner)
 }

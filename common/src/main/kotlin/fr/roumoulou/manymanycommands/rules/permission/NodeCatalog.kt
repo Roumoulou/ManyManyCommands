@@ -34,7 +34,7 @@ object NodeCatalog {
     private const val ACCESS_SEGMENT = "access"
 
     /** Les nœuds des commandes, dans l'ordre de l'arbre, puis les trois dispenses. */
-    val FIXED: List<PermissionNode> = HomesNodes.PLAYER_COMMANDS + WarpsNodes.ALL + BackNodes.BACK + WildNodes.ALL + TpaNodes.ALL + ModNodes.ALL + GroupsNodes.ALL + listOf(BypassNodes.DELAY, BypassNodes.COOLDOWN, BypassNodes.QUOTA)
+    val FIXED: List<PermissionNode> = HomesNodes.ALL + WarpsNodes.ALL + BackNodes.BACK + WildNodes.ALL + TpaNodes.ALL + ModNodes.ALL + GroupsNodes.ALL + listOf(BypassNodes.DELAY, BypassNodes.COOLDOWN, BypassNodes.QUOTA)
 
     /** Les familles qui ont des jeux de règles, par leur commande principale, dans l'ordre du cahier des charges. */
     val FAMILIES: List<String> = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules).map { it.family }

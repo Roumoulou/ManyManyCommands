@@ -20,14 +20,15 @@ object DestinationRefusals {
     /**
      * Le premier de ces refus, ou `null` quand rien ne refuse.
      *
-     * @param departure la dimension où se tient le joueur
+     * @param departure la dimension où se tient le joueur, `null` quand la dimension de départ ne se contrôle pas, pour l'administrateur dans
+     * la branche `player` des homes
      * @param destination la dimension de l'endroit à rejoindre
      * @param isDimensionKnown le serveur porte la dimension
      * @param quota le quota du joueur, `null` quand il n'en a pas ou en est dispensé
      * @param quotaWaitSeconds ce qui reste à attendre avant le prochain usage, consulté seulement quand le quota existe
      */
-    fun first(table: RulesTable, ruleSet: RuleValues, departure: String, destination: String, isDimensionKnown: (String) -> Boolean, quota: Quota?, quotaWaitSeconds: () -> Long, texts: DestinationTexts): Message? {
-        if (TeleportSteps.isDepartureForbidden(table, ruleSet, departure)) return texts.departureForbidden(departure)
+    fun first(table: RulesTable, ruleSet: RuleValues, departure: String?, destination: String, isDimensionKnown: (String) -> Boolean, quota: Quota?, quotaWaitSeconds: () -> Long, texts: DestinationTexts): Message? {
+        if (departure != null && TeleportSteps.isDepartureForbidden(table, ruleSet, departure)) return texts.departureForbidden(departure)
         if (!isDimensionKnown(destination)) return texts.dimensionMissing(destination)
         if (quota != null) {
             val wait = quotaWaitSeconds()
