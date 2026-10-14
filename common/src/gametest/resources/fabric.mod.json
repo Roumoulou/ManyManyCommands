@@ -14,6 +14,7 @@
       "fr.roumoulou.manymanycommands.gametest.PermissionNodeGameTests",
       "fr.roumoulou.manymanycommands.gametest.RuleSetGameTests",
       "fr.roumoulou.manymanycommands.gametest.GroupRightsGameTests",
+      "fr.roumoulou.manymanycommands.gametest.GroupsCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.HomesCommandGameTests",
       "fr.roumoulou.manymanycommands.gametest.HomesTeleportGameTests",
       "fr.roumoulou.manymanycommands.gametest.WarpsCommandGameTests",
