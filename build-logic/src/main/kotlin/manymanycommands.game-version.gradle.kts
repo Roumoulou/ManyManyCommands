@@ -566,7 +566,8 @@ publishing {
  *  planchers de la section 1 : le fichier, la version (0.1.0+26.3), le nom affiché
  *  (ManyManyCommands-0.1.0+26.3) et la version du jeu, celle que le jar exige. Le
  *  reste est commun aux trois jars :
- *    - Fabric, release, client et serveur
+ *    - Fabric, client et serveur, et le canal, alpha, beta ou stable, que
+ *      publish_type règle dans gradle.properties
  *    - Fabric API et Fabric Language Kotlin requises, Mod Menu et Cloth Config
  *      facultatives, par leur slug, le même sur les deux plateformes
  *    - le changelog : 04-releases\<version du mod>\changelog - a publier.md, dans
@@ -597,6 +598,7 @@ publishing {
  * ════════════════════════════════════════════════════════════════════════════════
  */
 val publishLive: Boolean = providers.gradleProperty("publish_live").map(String::toBoolean).getOrElse(false)
+val publishType: String = providers.gradleProperty("publish_type").getOrElse("stable")
 val releaseVersion: Provider<String> = minecraftVersion.map { "$modVersion+$it" }
 val releaseChangelog: RegularFile = layout.settingsDirectory.file("../../04-releases/$modVersion/changelog - a publier.md")
 val modrinthProjectId: Provider<String> = providers.gradleProperty("modrinth_project_id").filter(String::isNotBlank)
@@ -609,7 +611,12 @@ publishMods {
     version = releaseVersion
     displayName = releaseVersion.map { "ManyManyCommands-$it" }
     changelog = providers.fileContents(releaseChangelog).asText.orElse("")
-    type = STABLE
+    type = when (publishType) {
+        "alpha" -> ALPHA
+        "beta" -> BETA
+        "stable" -> STABLE
+        else -> throw GradleException("publish_type must be alpha, beta or stable, was '$publishType'")
+    }
     modLoaders.add("fabric")
 
     modrinth {
