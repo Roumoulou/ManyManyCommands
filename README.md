@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`) et le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds ; les commandes `group` et `permission` et la branche `/homes player` n'ont pas leurs commandes |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`), le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds, et les neuf commandes `group` et `permission` de `/manymanycommands` ; la branche `/homes player` n'a pas ses commandes, et la source `external` n'est pas branchée |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
@@ -25,10 +25,24 @@ Les spécifications du mod vivent dans `01-docs\specs\` du classeur, hors du dé
 |---|---|
 | `/manymanycommands` | affiche la version du mod, la source des droits et l'état de chacun de ses fichiers, les sept fichiers de réglages, le registre des joueurs et les inscriptions (`data/players.json`, `data/memberships.json`) puis les données du monde (`world/homes.json`, `world/warps.json`, `world/back.json`, `world/wild.json`, `world/tpa.json`), valide ou refusé, puis ce qui manque aux groupes |
 | `/manymanycommands reload` | relit les fichiers du mod, réglages et données : une ligne par fichier, appliqué, ou refusé avec ses constats, puis les réglages qui attendent le redémarrage, puis ce qui manque aux groupes |
+| `/manymanycommands group list` | affiche les groupes et leur nombre de membres, `default` comptant les joueurs du registre qui le suivent |
+| `/manymanycommands group info <group>` | affiche le jeu de règles de chaque famille, les nœuds accordés, les nœuds retirés et les membres d'un groupe |
+| `/manymanycommands group set <player> <group>` | inscrit un joueur dans un groupe, à la place du précédent |
+| `/manymanycommands group reset <player>` | renvoie un joueur dans `default` |
+| `/manymanycommands group of <player>` | affiche le groupe d'un joueur |
+| `/manymanycommands permission allow <player> <node>` | accorde un nœud à un joueur, en propre |
+| `/manymanycommands permission deny <player> <node>` | retire un nœud à un joueur, en propre |
+| `/manymanycommands permission unset <player> <node>` | efface la permission propre du joueur sur ce nœud, qui revient à son groupe |
+| `/manymanycommands permission list <player>` | affiche les permissions propres d'un joueur |
 | `/mmc` | alias de `/manymanycommands` et de ses sous-commandes |
 
-Les trois sont réservées aux maîtres du jeu (le niveau de `/tp`) et s'exécutent depuis la console. Sans ce
-niveau, elles n'existent pas pour le joueur, ni à la complétion ni à l'exécution.
+Toutes sont réservées aux maîtres du jeu (le niveau de `/tp`) et s'exécutent depuis la console. Sans ce
+niveau, elles n'existent pas pour le joueur, ni à la complétion ni à l'exécution. Les branches `group` et
+`permission` exigent que le système du mod soit la source des droits (`permission-source` à `internal`), et
+des inscriptions valides ; `<player>` y désigne tout joueur du registre, connecté ou non, sans la casse, et
+se complète avec les joueurs connectés ; `<node>` accepte les nœuds du mod, le jeu d'une famille quand son
+fichier de règles le porte, et la clé d'accès d'un warp pour toute clé bien écrite. `set`, `reset`, `allow`,
+`deny` et `unset` se journalisent, comme une commande d'opérateur.
 
 | Commande | Ce qu'elle fait |
 |---|---|
@@ -137,8 +151,8 @@ un jeu de règles. Le groupe `default` existe toujours.
 en propre donne ce jeu à la place de celui du groupe. Un joueur inscrit nulle part, ou dans un groupe absent
 de `groups.json`, suit `default`, ce que `/manymanycommands` et `reload` disent, comme un jeu nommé que le
 fichier de règles de sa famille ne porte pas. Des inscriptions invalides font de tout joueur un membre de
-`default`, sans permission propre. Les inscriptions s'écrivent à la main tant que les commandes `group` et
-`permission` n'existent pas ; un nœud inconnu du mod y rend le fichier invalide.
+`default`, sans permission propre. Les commandes `group` et `permission` écrivent les inscriptions ; un nœud
+inconnu du mod rend le fichier invalide.
 
 Les cinq familles lisent leurs règles ; les demandes y prennent la durée de vie et l'intervalle d'une demande,
 et le voyageur le délai, le cooldown et les dimensions de départ de son propre jeu, le quota étant celui du
@@ -208,9 +222,9 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 384 tests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 390 tests |
 | 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 153 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 123 gametests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 129 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
