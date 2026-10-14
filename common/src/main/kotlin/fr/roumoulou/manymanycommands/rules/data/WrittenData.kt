@@ -33,8 +33,14 @@ object DataRules {
     const val NAME_KEY = "name"
     const val QUOTA_KEY = "quota"
 
+    /** Le dossier des fichiers de données du serveur, dans celui du mod (cahier des charges, chapitre 2.7.1) : le registre des joueurs, les inscriptions. */
+    const val SERVER_DATA_DIRECTORY = "data"
+
     /** Le nom du fichier de données de [family] dans les messages : sous `world/`, quel que soit le nom du monde (`manymanycommands.md` des specs, chapitre 5). */
     fun fileName(family: String): String = "world/$family.json"
+
+    /** Le nom d'un fichier de données du serveur dans les messages : sous `data/`, son chemin dans le dossier du mod. */
+    fun serverFileName(name: String): String = "$SERVER_DATA_DIRECTORY/$name.json"
 
     /** Les constats d'un fichier lu, sans leur ligne : la version de schéma, puis chaque joueur. Vide quand le fichier est valide. */
     fun <ENTRY> findings(written: WrittenData<ENTRY>, entryFindings: (path: String, entry: ENTRY) -> List<FileFinding>): List<FileFinding> =

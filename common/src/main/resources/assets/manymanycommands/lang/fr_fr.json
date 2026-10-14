@@ -35,6 +35,7 @@
   "manymanycommands.common.allowed.lowercase_name": "1 à 32 caractères, lettres minuscules sans accent, chiffres, _ et -",
   "manymanycommands.common.allowed.dimension": "l'identifiant d'une dimension, comme minecraft:the_nether",
   "manymanycommands.common.allowed.player_id": "l'UUID d'un joueur, comme 069a79f4-44e9-4726-a5be-fca90e38aaf5",
+  "manymanycommands.common.allowed.utc_instant": "une date en UTC, comme 2026-10-05T12:00:00Z",
   "manymanycommands.common.allowed.none": "aucune",
 
   "manymanycommands.common.teleport.pending": "Une téléportation est déjà en attente.",

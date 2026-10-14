@@ -55,6 +55,7 @@ object CommonMessages : MessageFamily("common") {
     val ALLOWED_LOWERCASE_NAME = fragment("allowed.lowercase_name")
     val ALLOWED_DIMENSION = fragment("allowed.dimension")
     val ALLOWED_PLAYER_ID = fragment("allowed.player_id")
+    val ALLOWED_UTC_INSTANT = fragment("allowed.utc_instant")
     val ALLOWED_NONE = fragment("allowed.none")
 
     // Le déroulé d'une téléportation (chapitre 2.5.8) : ses refus, son compte à rebours, ses annulations.

@@ -8,6 +8,7 @@ import fr.roumoulou.manymanycommands.files.back.BackRulesFile
 import fr.roumoulou.manymanycommands.files.homes.HomesDataFile
 import fr.roumoulou.manymanycommands.files.homes.HomesRulesFile
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
+import fr.roumoulou.manymanycommands.files.players.PlayersDataFile
 import fr.roumoulou.manymanycommands.files.settings.GlobalSettingsFile
 import fr.roumoulou.manymanycommands.files.tpa.TpaDataFile
 import fr.roumoulou.manymanycommands.files.tpa.TpaRulesFile
@@ -38,6 +39,7 @@ import fr.roumoulou.manymanycommands.rules.mod.FileSetting
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import fr.roumoulou.manymanycommands.rules.mod.ModNodes
 import fr.roumoulou.manymanycommands.rules.mod.ModReports
+import fr.roumoulou.manymanycommands.rules.players.PlayerRegistry
 import fr.roumoulou.manymanycommands.rules.ruleset.FamilyRules
 import fr.roumoulou.manymanycommands.rules.ruleset.RuleValues
 import fr.roumoulou.manymanycommands.rules.ruleset.RulesTable
@@ -65,8 +67,8 @@ import java.time.Clock
 import java.util.UUID
 
 /**
- * L'état du mod pour un serveur : ses fichiers de réglages, les fichiers de données de son monde, ses textes, l'envoi de ses messages, ses
- * droits, son horloge et ses téléportations.
+ * L'état du mod pour un serveur : ses fichiers de réglages, ses fichiers de données, ceux du serveur et ceux de son monde, ses textes, l'envoi de
+ * ses messages, ses droits, son horloge et ses téléportations.
  *
  * Il s'ouvre sur le dossier qu'on lui donne et ne lit aucun chemin de lui-même : le point d'entrée lui donne le dossier du serveur, un test le
  * sien. Le dossier du monde lui arrive de même, au démarrage du serveur ([openWorld]). Chaque commande reçoit son `ModRuntime` à
@@ -108,12 +110,15 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     /** Les fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
     val settingsFiles: List<SettingsFile<*>> = listOf(globalSettingsFile) + rulesFiles.values
 
+    /** Les fichiers de données du serveur, dans `data\` du dossier du mod (cahier des charges, chapitre 2.7.1) : ouverts avec l'état, parce que leur dossier est connu avant le monde. */
+    val serverData = ServerData(configDirectory)
+
     /** Les fichiers de données du monde, `null` tant qu'aucun monde n'est ouvert : le jeu enregistre les commandes avant de connaître son dossier. */
     var worldData: WorldData? = null
         private set
 
-    /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent : les réglages, puis les données du monde. */
-    val files: List<ModFile> get() = settingsFiles + worldData?.files.orEmpty()
+    /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent : les réglages, les données du serveur, puis les données du monde. */
+    val files: List<ModFile> get() = settingsFiles + serverData.files + worldData?.files.orEmpty()
 
     val messenger = Messenger(TextCatalog.load(), language = { settings.language })
 
@@ -151,6 +156,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         startupSettings = settings
         rulesAtStartup = rulesFiles.mapValues { (_, file) -> file.inForce }
         invalidSettingsReport().forEach(::logError)
+        serverData.files.filter { !it.isValid }.flatMap(ModReports::refusal).forEach(::logError)
     }
 
     /** Les règles en vigueur de la famille de [table], que le rechargement remplace. */
@@ -170,6 +176,15 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
         val data = WorldData(worldDirectory)
         worldData = data
         data.files.filter { !it.isValid }.flatMap(ModReports::refusal).forEach(::logError)
+    }
+
+    /**
+     * À la connexion de [player] sous [name] (cahier des charges, chapitre 2.7.2) : le registre le note, à l'instant de l'état, et l'écrit tout de
+     * suite. Un registre invalide ne s'écrit pas.
+     */
+    fun recordJoin(player: UUID, name: String) {
+        val registry = serverData.players.content ?: return
+        serverData.players.update(registry.joined(player, name, clock.instant()))
     }
 
     /**
@@ -224,6 +239,20 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
 
     /** Le journal du serveur ne nomme pas ses loggers : chaque ligne dit de quel mod elle vient. */
     private fun logError(message: Message) = LOGGER.error("[ManyManyCommands] {}", messenger.forJournal(message))
+
+    /** Les fichiers de données du serveur (cahier des charges, chapitre 2.7.1), lus à l'ouverture de l'état : ce qui appartient au joueur sur le serveur, et survit à un changement de monde. */
+    class ServerData internal constructor(directory: Path) {
+
+        /** `data\players.json` : le registre des joueurs. */
+        val players: DataFile<PlayerRegistry> = PlayersDataFile.at(directory)
+
+        /** Les fichiers de données du serveur, dans l'ordre où l'état et le rechargement les donnent, celui du cahier des charges. */
+        val files: List<DataFile<*>> = listOf(players)
+
+        init {
+            files.forEach { it.load() }
+        }
+    }
 
     /** Les fichiers de données d'un monde (cahier des charges, chapitre 2.7.1) : chaque famille y tient les siens, lus à l'ouverture. */
     class WorldData internal constructor(directory: Path) {

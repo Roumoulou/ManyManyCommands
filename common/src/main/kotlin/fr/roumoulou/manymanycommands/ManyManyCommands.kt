@@ -53,7 +53,13 @@ class ManyManyCommands : ModInitializer {
             serverRunning = false
             runtime = null
         }
-        ServerPlayConnectionEvents.JOIN.register { handler, _, _ -> runtime?.greet(handler.player) }
+        // La connexion s'écrit au registre des joueurs, puis annonce les réglages invalides à qui a le nœud de l'état.
+        ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
+            runtime?.let {
+                it.recordJoin(handler.player.uuid, handler.player.scoreboardName)
+                it.greet(handler.player)
+            }
+        }
 
         // Le tick fait s'écouler le délai des téléportations en attente et annule celles dont le joueur a bougé, est mort ou parti ; il fait
         // tomber les demandes de téléportation d'un joueur parti et les demandes expirées.
