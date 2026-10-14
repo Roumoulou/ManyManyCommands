@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`), le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds, et les neuf commandes `group` et `permission` de `/manymanycommands` ; la branche `/homes player` n'a pas ses commandes, et la source `external` n'est pas branchée |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`), le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds, les neuf commandes `group` et `permission` de `/manymanycommands`, et la branche `/homes player`, ses sept commandes et son envoi ; la source `external` n'est pas branchée |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
@@ -54,6 +54,9 @@ fichier de règles le porte, et la clé d'accès d'un warp pour toute clé bien 
 | `/homes move <name>` | déplace le home à la position du joueur |
 | `/homes default <name>` | désigne le home par défaut, celui que `teleport` rejoint sans nom |
 | `/home [<name>]`, `/sethome <name>`, `/delhome <name>` | les alias de `teleport`, `create` et `delete`, que le réglage `aliases` de `rules/homes.json` désactive ensemble |
+| `/homes player <player> create <name> [<pos> [<rotation> [<dimension>]]]` | crée un home pour le joueur nommé, connecté ou non, à la position de l'administrateur ou au placement donné, sans la limite ni les dimensions interdites |
+| `/homes player <player> teleport <name> [<targets>]` | rejoint le home du joueur nommé par le déroulé commun, sous le jeu de règles de l'administrateur, ou y envoie les joueurs désignés, tout de suite |
+| `/homes player <player> delete <name>`, `rename <name> <newName>`, `move <name> [<pos> ...]`, `default <name>`, `list` | les mêmes commandes sur les homes du joueur nommé ; chaque succès nomme le propriétaire, qui n'est pas prévenu, et se journalise |
 | `/warps`, `/warps list` | affiche les warps auxquels le joueur a accès : l'en-tête avec leur nombre, chaque warp trié, cliquable pour le rejoindre et survolable pour sa position, la clé d'un warp réservé pour qui a le nœud de `restrict` |
 | `/warps teleport <name>` | rejoint le warp, par le déroulé commun ; un warp réservé à d'autres n'existe pas pour le joueur |
 | `/warps create <name> [<pos> [<rotation> [<dimension>]]]` | crée un warp ouvert à tous, à la position de l'administrateur ou au placement donné, dans les limites du monde |
@@ -81,7 +84,10 @@ annulant la précédente ; elle tombe quand l'un des deux joueurs se déconnecte
 sont aussi ; `create`, `delete`, `rename`, `move`, `restrict`, `unrestrict` et l'envoi (`teleport.others`) vont
 aux maîtres du jeu, qui reçoivent aussi tous les nœuds d'accès, et à la console, qui lance tout sauf ce qui a
 besoin d'une position : `create` et `move` sans `<pos>`, `teleport` sans `<targets>`. Une commande qui modifie
-un warp et l'envoi se journalisent, comme une commande d'opérateur. La position de retour s'enregistre quand
+un warp et l'envoi se journalisent, comme une commande d'opérateur. La branche `/homes player` suit le même
+partage, sous `manymanycommands.homes.player.<commande>` et `manymanycommands.homes.player.teleport.others`
+pour l'envoi : réservée aux maîtres du jeu et à la console, journalisée, `<player>` étant tout joueur du
+registre. La position de retour s'enregistre quand
 une source du jeu de règles du joueur l'active (`sources` dans `rules/back.json`) : une téléportation vers un
 home ou un warp, la téléportation aléatoire, une demande acceptée pour le voyageur, l'envoi par un
 administrateur, `/back` lui-même, et la mort, inactive par défaut. Elle vit en mémoire et s'efface au
@@ -222,9 +228,9 @@ il peut vivre :
 
 | Étage | Source set | Ce qu'il éprouve | Tâche |
 |---|---|---|---|
-| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 390 tests |
+| 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 396 tests |
 | 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 153 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 129 gametests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 135 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
