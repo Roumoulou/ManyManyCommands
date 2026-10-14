@@ -198,7 +198,9 @@ common/src/main/kotlin/fr/roumoulou/manymanycommands/
 └── commands/                       les arbres de commandes
 
 common/src/main/resources/          fabric.mod.json, gabarit que chaque module de version remplit,
-                                    et assets/manymanycommands/lang/, les deux fichiers de langue
+                                    assets/manymanycommands/lang/, les deux fichiers de langue, et
+                                    assets/manymanycommands/icon.png, l'icône du mod, rendue par le
+                                    générateur du classeur (07-tools-and-scripts/icon)
 common/src/test/                    l'étage 0 des tests : la logique pure
 common/src/testMC/                  l'étage 1 : le jeu amorcé
 common/src/gametest/                l'étage 2 : le mod manymanycommands-gametest, jamais publié
