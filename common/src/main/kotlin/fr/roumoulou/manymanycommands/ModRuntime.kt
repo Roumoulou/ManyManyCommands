@@ -45,6 +45,9 @@ import fr.roumoulou.manymanycommands.rules.mod.FileSetting
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
 import fr.roumoulou.manymanycommands.rules.mod.ModNodes
 import fr.roumoulou.manymanycommands.rules.mod.ModReports
+import fr.roumoulou.manymanycommands.rules.permission.RuleSetNode
+import fr.roumoulou.manymanycommands.rules.players.PlayerLookup
+import fr.roumoulou.manymanycommands.rules.players.PlayerRef
 import fr.roumoulou.manymanycommands.rules.players.PlayerRegistry
 import fr.roumoulou.manymanycommands.rules.ruleset.FamilyRules
 import fr.roumoulou.manymanycommands.rules.ruleset.RuleValues
@@ -208,6 +211,21 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     }
 
     /**
+     * Le joueur que [name] désigne dans une commande (cahier des charges, chapitre 2.7.2) : le joueur connecté qui porte ce nom, sinon celui du
+     * registre dont c'est le dernier nom connu, `null` quand personne ne le porte.
+     */
+    fun resolvePlayer(server: MinecraftServer, name: String): PlayerRef? = PlayerLookup.resolve(name, server.playerList.players.map { PlayerRef(it.uuid, it.scoreboardName) }, serverData.players.content)
+
+    /** Le jeu que nomme [ruleSet] existe dans les règles en vigueur de sa famille. */
+    fun hasRuleSet(ruleSet: RuleSetNode): Boolean = ruleSet.set in ruleSetsOf(ruleSet.family)
+
+    /** Les noms des nœuds des jeux de règles en vigueur, famille par famille, dans l'ordre des fichiers : ce que `<node>` propose en plus des nœuds fixes. */
+    fun ruleSetNodeNames(): List<String> = rulesFiles.flatMap { (table, file) -> file.inForce.sets.keys.map { table.setNode(it).name } }
+
+    /** Les jeux de règles en vigueur de la famille [family], vide pour une famille sans fichier de règles. */
+    private fun ruleSetsOf(family: String): Set<String> = rulesFiles.entries.firstOrNull { it.key.family == family }?.value?.inForce?.sets?.keys.orEmpty()
+
+    /**
      * L'endroit [from] que [player] vient de quitter devient sa position de retour, si [source] l'enregistre dans son jeu de règles du retour
      * (`back.md` des specs, chapitre 2). Le jeu est celui du joueur lui-même, et non celui de la source d'une commande.
      */
@@ -244,7 +262,7 @@ class ModRuntime private constructor(val version: String, configDirectory: Path,
     }
 
     /** Les groupes absents des réglages où des joueurs restent inscrits, et les jeux nommés absents des règles de leur famille (`groups.md` des specs, chapitre 6). */
-    private fun groupsReport(): List<Message> = GroupsReport.lines(groups, serverData.memberships.content) { family -> rulesFiles.entries.firstOrNull { it.key.family == family }?.value?.inForce?.sets?.keys.orEmpty() }
+    private fun groupsReport(): List<Message> = GroupsReport.lines(groups, serverData.memberships.content, ::ruleSetsOf)
 
     /** À la connexion d'un joueur : les réglages invalides au démarrage s'annoncent à qui a le nœud `manymanycommands.status`. */
     fun greet(player: ServerPlayer) {
