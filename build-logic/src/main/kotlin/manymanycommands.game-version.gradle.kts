@@ -566,8 +566,8 @@ publishing {
  *  planchers de la section 1 : le fichier, la version (0.1.0+26.3), le nom affiché
  *  (ManyManyCommands-0.1.0+26.3) et la version du jeu, celle que le jar exige. Le
  *  reste est commun aux trois jars :
- *    - Fabric, client et serveur, et le canal, alpha, beta ou stable, que
- *      publish_type règle dans gradle.properties
+ *    - Fabric ; le serveur requis et le client facultatif, pour le solo ; et le
+ *      canal, alpha, beta ou stable, que publish_type règle dans gradle.properties
  *    - Fabric API et Fabric Language Kotlin requises, Mod Menu et Cloth Config
  *      facultatives, par leur slug, le même sur les deux plateformes
  *    - le changelog : 04-releases\<version du mod>\changelog - a publier.md, dans
@@ -624,7 +624,8 @@ publishMods {
         // L'essai à blanc passe sans identifiant, que seul l'envoi réel emploie : checkPublication refuse l'envoi réel sans lui.
         projectId = modrinthProjectId.orElse("absent")
         minecraftVersions.add(minecraftVersion)
-        environment = CLIENT_AND_SERVER
+        // Le serveur porte le mod, un joueur n'a rien à installer pour le rejoindre ; en solo, le client le porte lui-même.
+        environment = SERVER_ONLY_CLIENT_OPTIONAL
         requires("fabric-api", "fabric-language-kotlin")
         optional("modmenu", "cloth-config")
         additionalFile(tasks.named("sourcesJar")) { type = SOURCES_JAR }
