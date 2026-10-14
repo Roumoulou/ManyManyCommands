@@ -293,10 +293,11 @@ outfitter.reference_instance_dir=C:/chemin/vers/PrismLauncher/instances/<instanc
 
 `publishMods` envoie les trois jars sur Modrinth et CurseForge par mod-publish-plugin, **à blanc par
 défaut** : rien ne part, ce qui serait envoyé s'écrit sous `mc-<lignée>/build/publishMods/`. Les deux
-projets se nomment dans `gradle.properties` (`modrinth_project_id`, `curseforge_project_id`), vides tant
-qu'ils n'existent pas ; `checkPublication` refuse alors tout envoi réel (`-Ppublish_live=true`). Le canal
-de la version, `alpha`, `beta` ou `stable`, se règle par `publish_type` dans le même fichier, `beta` pour la
-première version. Le changelog envoyé est `04-releases/<version>/changelog - a publier.md` du classeur.
+projets se nomment dans `gradle.properties` (`modrinth_project_id`, `curseforge_project_id`), chacun vide
+tant que son projet n'existe pas ; `checkPublication` refuse alors tout envoi réel
+(`-Ppublish_live=true`). Le canal de la version, `alpha`, `beta` ou `stable`, se règle par `publish_type`
+dans le même fichier, `beta` pour la première version. Le changelog envoyé est
+`04-releases/<version>/changelog - a publier.md` du classeur.
 `:mc-<lignée>:publishToMavenLocal` pose le jar dans le dépôt Maven local. Le détail est dans les sections 9
 et 10 du plugin `manymanycommands.game-version`.
 
