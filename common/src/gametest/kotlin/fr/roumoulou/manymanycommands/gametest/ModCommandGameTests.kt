@@ -7,6 +7,7 @@ import fr.roumoulou.manymanycommands.MOD_ID
 import fr.roumoulou.manymanycommands.files.message.TextCatalog
 import fr.roumoulou.manymanycommands.gametest.Harness.Lab
 import fr.roumoulou.manymanycommands.rules.back.BackRules
+import fr.roumoulou.manymanycommands.rules.data.DataRules
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.LanguageSetting
@@ -21,8 +22,11 @@ import net.minecraft.gametest.framework.GameTestHelper
 import net.minecraft.network.chat.contents.TranslatableContents
 import net.minecraft.server.permissions.LevelBasedPermissionSet
 import net.minecraft.world.level.storage.LevelResource
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.Optional
 import kotlin.io.path.exists
+import kotlin.io.path.readText
 
 /**
  * `/manymanycommands`, `reload` et l'alias `/mmc` (`manymanycommands.md` des specs), joués par un joueur simulé et par la console : chaque
@@ -99,14 +103,14 @@ class ModCommandGameTests {
 
     /**
      * L'état et le rechargement donnent chaque fichier du mod : `settings.json`, puis les cinq fichiers de règles, chacun sous son chemin dans
-     * le dossier du mod, puis les données du monde sous `world/`.
+     * le dossier du mod, puis le registre des joueurs sous `data/`, puis les données du monde sous `world/`.
      */
     @GameTest
     fun statusAndReloadGiveEveryFile(helper: GameTestHelper) {
         val runtime = Harness.serverRuntime(helper)
         val dispatcher = Harness.serverDispatcher(helper)
         val player = Harness.player(helper)
-        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
+        val names = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json", "data/players.json", "world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
 
         val status = Harness.record(runtime) { dispatcher.execute("manymanycommands", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
         val reload = Harness.record(runtime) { dispatcher.execute("manymanycommands reload", Harness.asGameMaster(player)) }.filter { it.player === player }.map { it.message }
@@ -168,6 +172,26 @@ class ModCommandGameTests {
         val deliveries = Harness.record(runtime) { Harness.player(helper) }
 
         helper.assertValueEqual(deliveries, emptyList(), "les messages reçus à la connexion")
+        helper.succeed()
+    }
+
+    /**
+     * La connexion d'un joueur l'écrit au registre du serveur, `data\players.json` dans le dossier du mod des configurations : son UUID, son nom
+     * du moment et l'instant, sur le disque tout de suite, par l'événement que le point d'entrée branche.
+     */
+    @GameTest
+    fun joiningWritesThePlayerToTheRegistry(helper: GameTestHelper) {
+        val runtime = Harness.serverRuntime(helper)
+        val before = Instant.now()
+
+        val player = Harness.player(helper, "Registered")
+
+        val registry = runtime.serverData.players.content ?: throw helper.assertionException("le registre du serveur n'est pas disponible")
+        val record = registry[player.uuid] ?: throw helper.assertionException("la connexion n'a pas écrit le joueur au registre")
+        helper.assertValueEqual(record.name, "Registered", "le dernier nom connu du joueur")
+        helper.assertFalse(record.lastSeen.isBefore(before.truncatedTo(ChronoUnit.SECONDS)) || record.lastSeen.isAfter(Instant.now()), "la dernière connexion est l'instant de la connexion")
+        val file = FabricLoader.getInstance().configDir.resolve(MOD_ID).resolve(DataRules.SERVER_DATA_DIRECTORY).resolve("players.json")
+        helper.assertTrue(file.readText().contains(player.uuid.toString()), "le registre est écrit sur le disque tout de suite : $file")
         helper.succeed()
     }
 

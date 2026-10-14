@@ -14,6 +14,7 @@ import fr.roumoulou.manymanycommands.rules.back.BackRules
 import fr.roumoulou.manymanycommands.rules.data.DataRules
 import fr.roumoulou.manymanycommands.rules.homes.HomesRules
 import fr.roumoulou.manymanycommands.rules.message.Message
+import fr.roumoulou.manymanycommands.rules.players.PlayerRegistryRules
 import fr.roumoulou.manymanycommands.rules.ruleset.RulesTable
 import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
 import fr.roumoulou.manymanycommands.rules.tpa.TpaRules
@@ -56,11 +57,14 @@ object Harness {
     /** Les six fichiers de réglages, par le nom que les messages leur donnent : `settings.json`, puis les cinq fichiers de règles. */
     val SETTINGS_FILES: List<String> = listOf(GlobalSettings.FILE_NAME) + RULES_TABLES.map { it.fileName }
 
+    /** Les fichiers de données du serveur, sous `data/`, par le nom que les messages leur donnent : le registre des joueurs. */
+    val SERVER_DATA_FILES: List<String> = listOf(PlayerRegistryRules.fileName)
+
     /** Les fichiers de données du monde, par le nom que les messages leur donnent, dans l'ordre où l'état et le rechargement les donnent. */
     val DATA_FILES: List<String> = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules).map { DataRules.fileName(it.family) }
 
-    /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent. */
-    val FILES: List<String> = SETTINGS_FILES + DATA_FILES
+    /** Tous les fichiers du mod, dans l'ordre où l'état et le rechargement les donnent : les réglages, les données du serveur, les données du monde. */
+    val FILES: List<String> = SETTINGS_FILES + SERVER_DATA_FILES + DATA_FILES
 
     /** L'état du mod pour le serveur GameTest, ouvert par le point d'entrée avant son démarrage. */
     fun serverRuntime(helper: GameTestHelper): ModRuntime = ManyManyCommands.runtime ?: throw helper.assertionException("le serveur GameTest n'a pas d'état du mod")

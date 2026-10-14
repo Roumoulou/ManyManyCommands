@@ -13,6 +13,8 @@ import fr.roumoulou.manymanycommands.rules.message.Language
 import fr.roumoulou.manymanycommands.rules.message.LanguageSetting
 import fr.roumoulou.manymanycommands.rules.message.Message
 import fr.roumoulou.manymanycommands.rules.mod.ModMessages
+import fr.roumoulou.manymanycommands.rules.players.PlayerRecord
+import fr.roumoulou.manymanycommands.rules.players.PlayerRegistry
 import fr.roumoulou.manymanycommands.rules.settings.GlobalSettings
 import fr.roumoulou.manymanycommands.rules.settings.PermissionSourceSetting
 import fr.roumoulou.manymanycommands.rules.tpa.TpaData
@@ -39,9 +41,9 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages et les cinq fichiers de données de son monde, le fichier invalide au
- * démarrage et au rechargement (cahier des charges, chapitre 2.7.3), et les réglages qui attendent le redémarrage (`manymanycommands.md` des
- * specs, chapitre 2).
+ * L'état du mod ouvert sur un dossier à lui : ses six fichiers de réglages, le registre des joueurs et les cinq fichiers de données de son monde,
+ * le fichier invalide au démarrage et au rechargement (cahier des charges, chapitre 2.7.3), et les réglages qui attendent le redémarrage
+ * (`manymanycommands.md` des specs, chapitre 2).
  */
 class ModRuntimeTest {
 
@@ -52,8 +54,11 @@ class ModRuntimeTest {
         /** Les six fichiers de réglages, dans l'ordre où l'état et le rechargement les donnent. */
         private val SETTINGS_FILES = listOf("settings.json", "rules/homes.json", "rules/warps.json", "rules/back.json", "rules/wild.json", "rules/tpa.json")
 
-        /** Tous les fichiers : les réglages, puis les données du monde. */
-        private val FILES = SETTINGS_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
+        /** Les fichiers de données du serveur, ouverts avec l'état. */
+        private val SERVER_DATA_FILES = listOf("data/players.json")
+
+        /** Tous les fichiers : les réglages, les données du serveur, puis les données du monde. */
+        private val FILES = SETTINGS_FILES + SERVER_DATA_FILES + listOf("world/homes.json", "world/warps.json", "world/back.json", "world/wild.json", "world/tpa.json")
 
         private val TABLES = listOf(HomesRules, WarpsRules, BackRules, WildRules, TpaRules)
 
@@ -74,11 +79,19 @@ class ModRuntimeTest {
 
     private val homesPath: Path get() = worldDirectory.resolve("homes.json")
 
+    /** Le registre des joueurs, dans `data\` du dossier du mod. */
+    private val playersPath: Path get() = directory.resolve("data").resolve("players.json")
+
     /** L'état ouvert sur le dossier du test, son monde ouvert comme le fait le démarrage du serveur. */
     private fun start(): ModRuntime = ModRuntime.start(directory, VERSION).also { it.openWorld(worldDirectory) }
 
     private fun writeRules(family: String, json: String) {
         directory.resolve("rules").createDirectories().resolve("$family.json").writeText(json)
+    }
+
+    private fun writePlayers(json: String) {
+        playersPath.parent.createDirectories()
+        playersPath.writeText(json)
     }
 
     private fun writeHomes(json: String) {
@@ -94,10 +107,10 @@ class ModRuntimeTest {
     // ── L'ouverture ──
 
     @Test
-    fun `l'ouverture crée les six fichiers de réglages et applique les réglages livrés`() {
+    fun `l'ouverture crée les six fichiers de réglages et le registre, et applique les réglages livrés`() {
         val runtime = start()
 
-        SETTINGS_FILES.forEach { assertTrue(directory.resolve(it).exists(), "$it must be created") }
+        (SETTINGS_FILES + SERVER_DATA_FILES).forEach { assertTrue(directory.resolve(it).exists(), "$it must be created") }
         assertEquals(SETTINGS_FILES, runtime.settingsFiles.map { it.name })
         assertEquals(GlobalSettings(), runtime.settings)
         assertEquals(GlobalSettings(), runtime.startupSettings)
@@ -123,26 +136,62 @@ class ModRuntimeTest {
     }
 
     @Test
-    fun `l'état donne la version, la source des droits et les onze fichiers, les données du monde en dernier`() {
+    fun `l'état donne la version, la source des droits et les douze fichiers, le registre après les réglages et les données du monde en dernier`() {
         val expected = listOf(ModMessages.STATUS_VERSION.with(VERSION), ModMessages.STATUS_SOURCE.with("internal")) + FILES.map { ModMessages.STATUS_FILE_VALID.with(it) }
 
         assertEquals(expected, start().status())
     }
 
     @Test
-    fun `le rechargement donne une ligne par fichier, les onze appliqués`() {
+    fun `le rechargement donne une ligne par fichier, les douze appliqués`() {
         assertEquals(FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, start().reload())
+    }
+
+    // ── Le registre des joueurs ──
+
+    @Test
+    fun `l'ouverture crée le registre vide dans data, et une connexion l'y écrit tout de suite, à l'instant de l'horloge, à la seconde`() {
+        val noon = Clock.fixed(Instant.parse("2026-10-05T12:00:00.750Z"), ZoneOffset.UTC)
+        val runtime = ModRuntime.start(directory, VERSION, clock = noon)
+        assertTrue(playersPath.exists(), "data/players.json must be created with the state")
+        assertEquals(PlayerRegistry(), runtime.serverData.players.content)
+
+        runtime.recordJoin(STEVE, "Steve")
+
+        assertEquals(PlayerRecord("Steve", Instant.parse("2026-10-05T12:00:00Z")), runtime.serverData.players.content?.get(STEVE))
+        assertTrue(playersPath.readText().contains("\"last-seen\": \"2026-10-05T12:00:00Z\""), "The join must be on the disk at once")
+        assertEquals(runtime.serverData.players.content, ModRuntime.start(directory, VERSION).serverData.players.content, "Another state reads what was written")
+    }
+
+    @Test
+    fun `un registre invalide à l'ouverture ne s'écrit pas, l'état le montre refusé, et corrigé puis rechargé il revient`() {
+        writePlayers("{\n  \"players\": {\n    \"Steve\": {}\n  }\n}")
+        val runtime = start()
+        val players = runtime.serverData.players
+        assertFalse(players.isAvailable)
+        assertEquals(ModMessages.STATUS_FILE_REFUSED.with("data/players.json"), statusOf(runtime, "data/players.json"))
+        assertFalse(runtime.hasShippedSettingsInPlace, "The registry is not a settings file")
+
+        runtime.recordJoin(STEVE, "Steve")
+        assertTrue(playersPath.readText().contains("\"Steve\": {}"), "Nothing is written to an invalid registry")
+
+        writePlayers("""{ "players": { "$STEVE": { "name": "Steve", "last-seen": "2026-10-05T12:00:00Z" } } }""")
+        val answer = runtime.reload()
+
+        assertEquals(reloadKeys(), answer.map { it.key })
+        assertEquals(PlayerRecord("Steve", Instant.parse("2026-10-05T12:00:00Z")), players.content?.get(STEVE))
+        assertEquals(ModMessages.STATUS_FILE_VALID.with("data/players.json"), statusOf(runtime, "data/players.json"))
     }
 
     // ── Le monde et ses données ──
 
     @Test
-    fun `tant qu'aucun monde n'est ouvert, l'état ne donne que les fichiers de réglages`() {
+    fun `tant qu'aucun monde n'est ouvert, l'état ne donne que les fichiers de réglages et le registre`() {
         val runtime = ModRuntime.start(directory, VERSION)
 
         assertNull(runtime.worldData)
-        assertEquals(SETTINGS_FILES, runtime.files.map { it.name })
-        assertEquals(SETTINGS_FILES.map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, runtime.reload())
+        assertEquals(SETTINGS_FILES + SERVER_DATA_FILES, runtime.files.map { it.name })
+        assertEquals((SETTINGS_FILES + SERVER_DATA_FILES).map { ModMessages.RELOAD_FILE_APPLIED.with(it) }, runtime.reload())
     }
 
     @Test
