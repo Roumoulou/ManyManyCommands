@@ -568,8 +568,8 @@ publishing {
  *  reste est commun aux trois jars :
  *    - Fabric ; le serveur requis et le client facultatif, pour le solo ; et le
  *      canal, alpha, beta ou stable, que publish_type règle dans gradle.properties
- *    - Fabric API et Fabric Language Kotlin requises, Mod Menu et Cloth Config
- *      facultatives, par leur slug, le même sur les deux plateformes
+ *    - Fabric API et Fabric Language Kotlin requises, par leur slug, le même sur
+ *      les deux plateformes
  *    - le changelog : 04-releases\<version du mod>\changelog - a publier.md, dans
  *      le classeur, le même pour les trois jars
  *    - les deux projets, nommés dans gradle.properties (modrinth_project_id,
@@ -627,7 +627,6 @@ publishMods {
         // Le serveur porte le mod, un joueur n'a rien à installer pour le rejoindre ; en solo, le client le porte lui-même.
         environment = SERVER_ONLY_CLIENT_OPTIONAL
         requires("fabric-api", "fabric-language-kotlin")
-        optional("modmenu", "cloth-config")
         additionalFile(tasks.named("sourcesJar")) { type = SOURCES_JAR }
     }
 
@@ -641,7 +640,6 @@ publishMods {
         client = true
         server = true
         requires("fabric-api", "fabric-language-kotlin")
-        optional("modmenu", "cloth-config")
     }
 }
 
