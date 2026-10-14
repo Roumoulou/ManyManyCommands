@@ -6,7 +6,7 @@ installer pour rejoindre un serveur qui le porte.
 
 | | |
 |---|---|
-| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`), le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds, les neuf commandes `group` et `permission` de `/manymanycommands`, et la branche `/homes player`, ses sept commandes et son envoi ; la source `external` n'est pas branchée |
+| État | 0.1.0 : le socle (les messages en français et en anglais, `settings.json`, les droits par défaut), `/manymanycommands`, les fichiers de règles des cinq familles qui téléportent, le déroulé d'une téléportation, ses règles et le moteur qui le joue, et quatre familles jouables : les homes du joueur, `/homes` et ses sept sous-commandes, ses trois alias, et `homes.json` dans le dossier du monde ; les warps, `/warps` et ses huit sous-commandes, l'envoi par l'administrateur, ses trois alias, et `warps.json` ; le retour, `/back` et la position de retour qu'enregistrent les homes, les warps, l'envoi, le retour lui-même, la téléportation aléatoire et la mort ; la téléportation aléatoire, `/wild`, `/wild timed` et `/rtp`, et `wild.json` ; les demandes de téléportation, leurs six commandes, l'expiration, la chute à la déconnexion, le voyage par le déroulé commun et `tpa.json` ; le registre des joueurs, `data/players.json`, écrit à chaque connexion ; les groupes (`groups.json`), les inscriptions (`data/memberships.json`), le système de droits du mod, qui donne à chaque joueur son jeu de règles et ses nœuds, les neuf commandes `group` et `permission` de `/manymanycommands`, la branche `/homes player`, ses sept commandes et son envoi, et la source `external`, un mod de permissions par le module de la Fabric API : tout ce que les spécifications cadrent |
 | Minecraft | 26.3, 26.2 et 26.1.2, un jar par version : `manymanycommands-<version>+<version du jeu>.jar` |
 | Fabric Loader | 0.19.5 ou plus récent, **calculé** : voir Build |
 | Dépendances | Fabric API, celle contre laquelle chaque jar est compilé ou plus récente (0.162.0 en 26.3, 0.161.0 en 26.2, 0.155.3 en 26.1.2), **calculée** : voir Build ; Fabric Language Kotlin 1.14.2 ou plus récent |
@@ -117,8 +117,10 @@ pour tout le mod :
 | `mmc-alias` | `true` | `true`, `false` | au redémarrage du serveur |
 
 `permission-source` choisit d'où viennent les droits des joueurs : `internal`, le système du mod, décrit
-plus bas avec `groups.json`, ou `external`, un mod de permissions par le module de permissions de la
-Fabric API, qui n'est pas encore branché : sous `external`, seuls les droits par défaut existent.
+plus bas avec `groups.json`, ou `external`, un mod de permissions qui répond au module de permissions de la
+Fabric API (`fabric-permission-api-v1`), comme LuckPerms : le mod y demande chaque nœud sous sa forme
+d'identifiant, `manymanycommands:homes/create`, et sur ce que le mod de permissions tait, le défaut du profil
+décide. Sous `external`, les groupes et les inscriptions du mod sont ignorés.
 
 `rules/` porte un fichier de règles par famille qui téléporte : ses réglages du serveur, puis ses jeux de
 règles sous `rules`.
@@ -230,7 +232,7 @@ il peut vivre :
 |---|---|---|---|
 | 0, la logique pure | `common/src/test` | les règles de la couche `rules`, sans un type du jeu : un import du jeu n'y compile pas | `:common:test`, une fois, 396 tests |
 | 1, le jeu amorcé | `common/src/testMC` | les fichiers du mod sur de vrais fichiers, et ce qui nomme un type du jeu, sans serveur | `:mc-<lignée>:testMC`, par version, 153 tests |
-| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 135 gametests |
+| 2, le serveur GameTest | `common/src/gametest` | les commandes et le déroulé d'une téléportation, joués par des joueurs simulés et par la console sur un vrai serveur sans fenêtre | `:mc-<lignée>:runGameTest`, par version, 137 gametests |
 
 Ce que chaque test prouve est dans `01-docs\technical-docs\00-wip\strategie-de-test.md` du classeur.
 `build` joue aussi, contre chaque version :
@@ -290,7 +292,9 @@ outfitter.reference_instance_dir=C:/chemin/vers/PrismLauncher/instances/<instanc
 `publishMods` envoie les trois jars sur Modrinth et CurseForge par mod-publish-plugin, **à blanc par
 défaut** : rien ne part, ce qui serait envoyé s'écrit sous `mc-<lignée>/build/publishMods/`. Les deux
 projets se nomment dans `gradle.properties` (`modrinth_project_id`, `curseforge_project_id`), vides tant
-qu'ils n'existent pas ; `checkPublication` refuse alors tout envoi réel (`-Ppublish_live=true`).
+qu'ils n'existent pas ; `checkPublication` refuse alors tout envoi réel (`-Ppublish_live=true`). Le canal
+de la version, `alpha`, `beta` ou `stable`, se règle par `publish_type` dans le même fichier, `beta` pour la
+première version. Le changelog envoyé est `04-releases/<version>/changelog - a publier.md` du classeur.
 `:mc-<lignée>:publishToMavenLocal` pose le jar dans le dépôt Maven local. Le détail est dans les sections 9
 et 10 du plugin `manymanycommands.game-version`.
 
