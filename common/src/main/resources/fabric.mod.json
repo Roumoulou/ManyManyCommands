@@ -5,6 +5,7 @@
   "name": "ManyManyCommands",
   "description": "Des commandes de homes, de warps et de téléportation pour un serveur Minecraft.",
   "authors": ["Roumoulou"],
+  "icon": "assets/manymanycommands/icon.png",
   "contact": {
     "homepage": "https://github.com/Roumoulou/ManyManyCommands",
     "sources": "https://github.com/Roumoulou/ManyManyCommands",
